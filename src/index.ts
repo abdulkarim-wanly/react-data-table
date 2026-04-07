@@ -44,3 +44,18 @@ export { SearchInput } from './components/SearchInput/SearchInput';
 export { componentCell } from './components/ColumnHelper';
 
 export { InlineFiltersUI } from './components/InlineFiltersUI/InlineFiltersUI';
+
+export type {
+  DataTableClassNames,
+  DataTableLabels,
+  DataTableLayoutComponents,
+  DataTablePageHeaderSlotProps,
+  DataTableTableShellSlotProps,
+  DataTableToolbarSlotProps,
+} from './dataTableLayout';
+export {
+  DEFAULT_DATA_TABLE_CLASSNAMES,
+  DEFAULT_DATA_TABLE_LABELS,
+  mergeDataTableClassNames,
+  mergeDataTableLabels,
+} from './dataTableLayout';

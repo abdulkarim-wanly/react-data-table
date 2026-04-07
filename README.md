@@ -129,9 +129,63 @@ i18n.use(initReactI18next).init({
 
 If you do **not** set `config.searchFields`, you can skip some keys; still provide `I18nextProvider` if any child uses `SearchInput`.
 
-### 3. Styling
+### 3. Styling (Tailwind)
 
-Components use **utility class names** (Tailwind-style: `flex`, `gap-4`, `min-w-full`, etc.). Your app should include **Tailwind** (or equivalent CSS) so layout and spacing match your design system.
+The table ships with **plain defaults** (`DEFAULT_DATA_TABLE_CLASSNAMES`). Override only what you need via **`config.classNames`**, or swap whole regions with **`config.layoutComponents`**.
+
+**`config.classNames`** — partial map of regions (root, `headerCard`, `tableOuter`, `tableScroll`, `tableHeadCellSortable`, pagination, skeleton bars, etc.). Import **`DEFAULT_DATA_TABLE_CLASSNAMES`** or **`mergeDataTableClassNames`** if you want to extend defaults in code.
+
+**`config.labels`** — strings for error/empty/pagination. Default is English; pass values from **`t('…')`** if you use i18n.
+
+**`config.layoutComponents`** — optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** components. Each receives **`classNames`** (the merged tokens for that region) and **`children`** (toolbar/shell). Use these when you need a **glass card**, sticky header chrome, or a **`PageHeader`** that matches the rest of your app.
+
+Example: glass shell + fixed scroll height (Tailwind classes only):
+
+```tsx
+import {
+  DataTable,
+  type DataTableConfig,
+  DEFAULT_DATA_TABLE_CLASSNAMES,
+} from "genesis-react-data-table";
+
+const glassTableClasses = {
+  ...DEFAULT_DATA_TABLE_CLASSNAMES,
+  root: "flex flex-col gap-4 w-full max-w-full overflow-x-hidden",
+  headerCard:
+    "flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 w-full glass glass-2 glass-highlight rounded-2xl p-4 md:p-5",
+  tableOuter: "glass glass-3 rounded-2xl overflow-hidden w-full max-w-full max-h-[410px] flex flex-col min-h-0",
+  tableScroll:
+    "bg-background/45 dark:bg-background/30 h-[410px] min-h-0 overflow-auto w-full",
+  tableHeader: "h-16 sticky top-0 z-10 backdrop-blur bg-background/70 dark:bg-background/50",
+};
+
+const config: DataTableConfig<Row> = {
+  /* … */
+  classNames: glassTableClasses,
+};
+```
+
+Example: custom **`PageHeader`** (your design system component):
+
+```tsx
+import type { DataTablePageHeaderSlotProps } from "genesis-react-data-table";
+
+function PageHeader({ title, subtitle, rightSlot, classNames }: DataTablePageHeaderSlotProps) {
+  return (
+    <div className={classNames.headerCard}>
+      <div>
+        {title && <h2 className={classNames.pageTitle}>{title}</h2>}
+        {subtitle && <p className={classNames.pageSubtitle}>{subtitle}</p>}
+      </div>
+      {rightSlot && <div className={classNames.actionsWrapper}>{rightSlot}</div>}
+    </div>
+  );
+}
+
+<DataTable config={{ ...config, layoutComponents: { PageHeader } }} />;
+```
+
+`PageHeader` receives **`rightSlot`** as the raw **`ActionButtonsBar`** (no extra wrapper) so you control alignment. The built-in header still wraps the bar in **`actionsWrapper`** when you do not supply **`PageHeader`**.
 
 ---
 
@@ -213,6 +267,9 @@ const config: DataTableConfig<Row, Filters> = {
 | `onUrlAction` | Runs **once** on mount with **`config`** and **`context`** |
 | `staleTime` / `gcTime` / `refetchOnWindowFocus` | Passed to **`useQuery`** |
 | `skeletonRows` | Loading placeholder row count |
+| `classNames` | Partial **`DataTableClassNames`** — Tailwind (or any) classes per layout region; see **Styling** above |
+| `labels` | Partial **`DataTableLabels`** — error/empty/pagination copy |
+| `layoutComponents` | Optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** to replace default layout wrappers |
 
 ---
 

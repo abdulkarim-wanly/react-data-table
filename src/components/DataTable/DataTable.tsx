@@ -24,8 +24,19 @@ import type {
   ServiceResult,
 } from '../../tableTypes';
 import { isModalPayload } from '../../tableTypes';
+import {
+  mergeDataTableClassNames,
+  mergeDataTableLabels,
+  type DataTableClassNames,
+  type DataTableLabels,
+  type DataTableLayoutComponents,
+} from '../../dataTableLayout';
 
 export type { ServiceQuery, ServiceResult } from '../../tableTypes';
+
+function joinClasses(...parts: (string | undefined | false)[]): string {
+  return parts.filter(Boolean).join(' ').trim();
+}
 
 // Configuration object accepted by the DataTable component. Many fields mirror
 // the original component’s API but have been made optional or simplified. The
@@ -86,6 +97,17 @@ export interface DataTableConfig<TRecord, TFilters extends FilterValues = Filter
     config: DataTableConfig<TRecord, TFilters>;
     context: DataTableActionsContext<TRecord, TFilters>;
   }) => void;
+  /**
+   * Tailwind-friendly class names per region. See {@link DEFAULT_DATA_TABLE_CLASSNAMES}
+   * (re-exported from the package root). Omit keys you do not override.
+   */
+  classNames?: Partial<DataTableClassNames>;
+  /** Copy for empty/error/pagination. Defaults to English; pass `t(...)` results from i18n. */
+  labels?: Partial<DataTableLabels>;
+  /**
+   * Replace header, toolbar, or table shell with your own layout (glass cards, `PageHeader`, etc.).
+   */
+  layoutComponents?: DataTableLayoutComponents;
 }
 
 export interface DataTableProps<TRecord, TFilters extends FilterValues = FilterValues> {
@@ -291,102 +313,193 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   const colsCount = columns.length;
   const busy = isLoading || isFetching;
 
-  return (
-    <div className="flex flex-col gap-4 w-full max-w-full overflow-x-auto">
-      {(config.pageHeader || (config.actions && config.actions.length > 0)) && (
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 w-full">
-          {config.pageHeader && (
-            <div>
-              {config.pageHeader.title && <h2>{config.pageHeader.title}</h2>}
-              {config.pageHeader.subtitle && <p>{config.pageHeader.subtitle}</p>}
-            </div>
-          )}
-          {config.actions && config.actions.length > 0 && (
-            <ActionButtonsBar
-              actions={config.actions}
-              context={actionsContext}
-              onOpenModal={config.onOpenModal}
-            />
-          )}
+  const c = React.useMemo(() => mergeDataTableClassNames(config.classNames), [config.classNames]);
+  const labels = React.useMemo(() => mergeDataTableLabels(config.labels), [config.labels]);
+  const LC = config.layoutComponents;
+
+  const hasHeaderBlock = Boolean(config.pageHeader || (config.actions && config.actions.length > 0));
+  const actionsBar =
+    config.actions && config.actions.length > 0 ? (
+      <ActionButtonsBar
+        actions={config.actions}
+        context={actionsContext}
+        onOpenModal={config.onOpenModal}
+      />
+    ) : null;
+  const actionsWrapped = actionsBar ? <div className={joinClasses(c.actionsWrapper)}>{actionsBar}</div> : null;
+
+  const defaultHeaderInner = (
+    <>
+      {config.pageHeader && (
+        <div className={joinClasses(c.pageHeaderWrapper)}>
+          {config.pageHeader.title && <h2 className={joinClasses(c.pageTitle)}>{config.pageHeader.title}</h2>}
+          {config.pageHeader.subtitle && <p className={joinClasses(c.pageSubtitle)}>{config.pageHeader.subtitle}</p>}
         </div>
       )}
-      {typeof config.renderFilters === 'function' ? (
-        config.renderFilters(actionsContext)
-      ) : config.filtersUI != null ? (
-        <InlineFiltersUI context={actionsContext} filtersUI={config.filtersUI} />
-      ) : null}
-      {config.searchFields && config.searchFields.length > 0 && (
+      {actionsWrapped}
+    </>
+  );
+
+  const headerSection =
+    hasHeaderBlock &&
+    (LC?.PageHeader ? (
+      <LC.PageHeader
+        title={config.pageHeader?.title}
+        subtitle={config.pageHeader?.subtitle}
+        rightSlot={actionsBar ?? undefined}
+        classNames={{
+          headerCard: c.headerCard,
+          pageHeaderWrapper: c.pageHeaderWrapper,
+          pageTitle: c.pageTitle,
+          pageSubtitle: c.pageSubtitle,
+          actionsWrapper: c.actionsWrapper,
+        }}
+      />
+    ) : (
+      <div className={joinClasses(c.headerCard)}>{defaultHeaderInner}</div>
+    ));
+
+  const filtersEl =
+    typeof config.renderFilters === 'function' ? (
+      config.renderFilters(actionsContext)
+    ) : config.filtersUI != null ? (
+      <InlineFiltersUI context={actionsContext} filtersUI={config.filtersUI} />
+    ) : null;
+
+  const searchEl =
+    config.searchFields && config.searchFields.length > 0 ? (
+      <div className={joinClasses(c.searchWrapper)}>
         <SearchInput
           searchFields={config.searchFields}
           value={searchValue}
           onChange={setSearchValue}
-          className="max-w-md"
+          className={joinClasses(c.searchInput)}
         />
-      )}
-      <div className="overflow-auto">
-        <Table className="min-w-full border-collapse">
-          <TableHeader>
-            {headerGroups.map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
+      </div>
+    ) : null;
+
+  const toolbarInner = (
+    <>
+      {filtersEl}
+      {searchEl}
+    </>
+  );
+
+  const toolbarSection =
+    (filtersEl || searchEl) &&
+    (LC?.Toolbar ? (
+      <LC.Toolbar classNames={{ filtersAndSearchRow: c.filtersAndSearchRow }}>{toolbarInner}</LC.Toolbar>
+    ) : (
+      <div className={joinClasses(c.filtersAndSearchRow)}>{toolbarInner}</div>
+    ));
+
+  const tableInner = (
+    <div className={joinClasses(c.tableScroll)}>
+      <Table className={joinClasses(c.table)}>
+        <TableHeader className={joinClasses(c.tableHeader)}>
+          {headerGroups.map((headerGroup) => (
+            <TableRow key={headerGroup.id} className={joinClasses(c.tableRow)}>
+              {headerGroup.headers.map((header) => {
+                const canSort = header.column.getCanSort();
+                return (
                   <TableHead
                     key={header.id}
-                    style={{ cursor: header.column.getCanSort() ? 'pointer' : undefined }}
-                    onClick={header.column.getToggleSortingHandler()}
+                    className={joinClasses(c.tableHeadCell, canSort ? c.tableHeadCellSortable : '')}
+                    onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                   >
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                    {header.column.getCanSort() && (
+                    {canSort && (
                       <span>
                         {header.column.getIsSorted() === 'asc' ? ' 🔼' : header.column.getIsSorted() === 'desc' ? ' 🔽' : ''}
                       </span>
                     )}
                   </TableHead>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody className={joinClasses(c.tableBody)}>
+          {busy ? (
+            Array.from({ length: skeletonRows }).map((_, idx) => (
+              <TableRow key={idx} className={joinClasses(c.tableRow, c.skeletonRow)}>
+                {Array.from({ length: colsCount }).map((__, colIdx) => (
+                  <TableCell key={colIdx} className={joinClasses(c.tableCell)}>
+                    <div className={joinClasses(c.skeletonBar)} />
+                  </TableCell>
                 ))}
               </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {busy ? (
-              Array.from({ length: skeletonRows }).map((_, idx) => (
-                <TableRow key={idx}>
-                  {Array.from({ length: colsCount }).map((__, colIdx) => (
-                    <TableCell key={colIdx}>
-                      <div style={{ backgroundColor: '#f2f2f2', height: '1rem', borderRadius: '4px' }} />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : isError ? (
-              <TableRow>
-                <TableCell colSpan={colsCount}>Error loading data</TableCell>
+            ))
+          ) : isError ? (
+            <TableRow className={joinClasses(c.tableRow)}>
+              <TableCell className={joinClasses(c.tableCell, c.messageCell)} colSpan={colsCount}>
+                {labels.errorLoading}
+              </TableCell>
+            </TableRow>
+          ) : rows.length === 0 ? (
+            <TableRow className={joinClasses(c.tableRow)}>
+              <TableCell className={joinClasses(c.tableCell, c.messageCell)} colSpan={colsCount}>
+                {labels.noResults}
+              </TableCell>
+            </TableRow>
+          ) : (
+            rows.map((row) => (
+              <TableRow key={row.id} className={joinClasses(c.tableRow)}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id} className={joinClasses(c.tableCell)}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
               </TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={colsCount}>No results</TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      {totalPages && totalPages > 1 && (
-        <div className="flex items-center justify-between gap-3 text-sm mt-2">
-          <div>
-            Page {page} of {totalPages}
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
+  const tableSection = LC?.TableShell ? (
+    <LC.TableShell classNames={{ tableOuter: c.tableOuter, tableScroll: c.tableScroll }}>{tableInner}</LC.TableShell>
+  ) : (
+    <div className={joinClasses(c.tableOuter)}>{tableInner}</div>
+  );
+
+  const showPagination = totalPages != null && totalPages > 1;
+
+  return (
+    <div className={joinClasses(c.root)}>
+      {headerSection}
+      {toolbarSection}
+      {tableSection}
+      {showPagination && (
+        <div className={joinClasses(c.pagination)}>
+          <div className={joinClasses(c.paginationInfo)}>
+            <p>
+              {labels.pageLabel} {page}
+              {totalPages ? ` ${labels.ofLabel} ${totalPages}` : ''}
+              {data?.meta?.total != null && (
+                <span className={joinClasses(c.paginationMeta)}>
+                  {` (${data.meta.total} ${labels.itemsLabel})`}
+                </span>
+              )}
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button type="button" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-              Previous
+          <div className={joinClasses(c.paginationButtons)}>
+            <button
+              type="button"
+              className={joinClasses(c.paginationButton)}
+              disabled={page === 1 || isFetching}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              {labels.prev}
             </button>
-            <button type="button" disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
-              Next
+            <button
+              type="button"
+              className={joinClasses(c.paginationButton)}
+              disabled={page === totalPages || isFetching}
+              onClick={() => setPage((p) => Math.min(totalPages!, p + 1))}
+            >
+              {labels.next}
             </button>
           </div>
         </div>
