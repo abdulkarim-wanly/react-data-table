@@ -279,6 +279,8 @@ After the first successful load (and while not in an error state), the table sho
 
 For predictable behaviour on the last page and when there is only one page, return **`meta.total`** from **`getAll`** (and optionally echo **`perPage`**). Cursor-style APIs can omit **`total`** and set **`hasNext`** / **`hasPrevious`** instead.
 
+You can return both **`total`** and **`hasNext`** (e.g. `meta: { total, page, perPage, start, next, hasNext }`). When **`hasNext`** is present, the **Next** button uses it instead of inferring from **`total`**, so the server stays authoritative. **`start`** and **`next`** are typed on **`DataTableQueryMeta`** and appear on **`context.meta`** for custom actions or future cursor-based paging.
+
 ---
 
 ### `filtersUI` shapes (no `renderFilters` needed)

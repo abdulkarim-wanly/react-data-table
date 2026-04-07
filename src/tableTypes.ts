@@ -28,7 +28,19 @@ export interface DataTableQueryMeta {
   page?: number;
   /** Optional echo of page size from the server. */
   perPage?: number;
-  /** When `total` is omitted, controls the Next button. */
+  /**
+   * First-row offset / index for this page (meaning is API-specific). Passed through on
+   * {@link DataTableActionsContext.meta}; the table does not interpret it unless you use it in actions.
+   */
+  start?: number;
+  /**
+   * Next page cursor, URL, or token from the server. Passed through on context only; the built-in
+   * Prev/Next buttons still use numeric `page` unless you wire cursor logic yourself.
+   */
+  next?: unknown;
+  /**
+   * When set, controls the Next button (preferred over deriving from `total` so the server stays authoritative).
+   */
   hasNext?: boolean;
   /** When `total` is omitted, controls the Previous button (defaults to `page > 1`). */
   hasPrevious?: boolean;

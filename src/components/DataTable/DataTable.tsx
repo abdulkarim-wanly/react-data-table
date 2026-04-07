@@ -289,11 +289,11 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   const rowCount = tableData.length;
   const canGoPrev = meta?.hasPrevious !== undefined ? meta.hasPrevious : page > 1;
   const canGoNext = React.useMemo(() => {
-    if (totalPages != null) return page < totalPages;
     if (meta?.hasNext !== undefined) return meta.hasNext;
+    if (totalPages != null) return page < totalPages;
     if (page === 1 && rowCount === 0) return false;
     return rowCount >= effectivePerPage;
-  }, [totalPages, page, meta?.hasNext, rowCount, effectivePerPage]);
+  }, [meta?.hasNext, totalPages, page, rowCount, effectivePerPage]);
 
   const showPagination = data !== undefined && !isError;
 
