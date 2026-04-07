@@ -84,6 +84,12 @@ export interface DataTableLabels {
   pageLabel: string;
   ofLabel: string;
   itemsLabel: string;
+  /** `{{start}}`, `{{end}}`, `{{total}}` — shown when `meta.total` is set and greater than zero */
+  showingRange: string;
+  /** `{{count}}` — rows on the current page when `meta.total` is not available */
+  rowsThisPage: string;
+  /** Shown when `meta.total === 0` */
+  emptyDataset: string;
   prev: string;
   next: string;
 }
@@ -94,6 +100,9 @@ export const DEFAULT_DATA_TABLE_LABELS: DataTableLabels = {
   pageLabel: 'Page',
   ofLabel: 'of',
   itemsLabel: 'items',
+  showingRange: 'Showing {{start}}–{{end}} of {{total}}',
+  rowsThisPage: '{{count}} on this page',
+  emptyDataset: 'No items',
   prev: 'Previous',
   next: 'Next',
 };

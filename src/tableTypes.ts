@@ -19,10 +19,19 @@ export type MergedTableFilters<TFilters extends FilterValues> = TFilters & DataT
 
 /** Pagination metadata returned by `service.getAll`. */
 export interface DataTableQueryMeta {
-  total: number;
-  page: number;
-  perPage: number;
+  /**
+   * Total items across all pages. When set, the footer shows “page X of Y” and a range summary.
+   * Omit for cursor-style APIs and set {@link hasNext} / {@link hasPrevious} instead.
+   */
+  total?: number;
+  /** Optional echo of the current page from the server. */
+  page?: number;
+  /** Optional echo of page size from the server. */
+  perPage?: number;
+  /** When `total` is omitted, controls the Next button. */
   hasNext?: boolean;
+  /** When `total` is omitted, controls the Previous button (defaults to `page > 1`). */
+  hasPrevious?: boolean;
 }
 
 /** Result shape for the data service. */

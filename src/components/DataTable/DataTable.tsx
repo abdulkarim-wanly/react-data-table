@@ -38,6 +38,10 @@ function joinClasses(...parts: (string | undefined | false)[]): string {
   return parts.filter(Boolean).join(' ').trim();
 }
 
+function formatLabel(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => String(vars[key] ?? ''));
+}
+
 // Configuration object accepted by the DataTable component. Many fields mirror
 // the original component’s API but have been made optional or simplified. The
 // service property is required.
@@ -269,16 +273,29 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   }, []);
 
   const meta = data?.meta;
+  const effectivePerPage = Math.max(1, meta?.perPage ?? perPage);
+  const totalCount = meta?.total;
+
   const totalPages = React.useMemo(() => {
-    if (meta?.total == null) return null;
-    const ep = meta?.perPage || perPage;
-    return Math.max(1, Math.ceil(meta.total / (ep || 1)));
-  }, [meta?.total, meta?.perPage, perPage]);
+    if (totalCount == null || totalCount < 0) return null;
+    return Math.max(1, Math.ceil(totalCount / effectivePerPage));
+  }, [totalCount, effectivePerPage]);
 
   React.useEffect(() => {
-    if (!totalPages) return;
+    if (totalPages == null) return;
     setPage((p) => Math.min(Math.max(1, p), totalPages));
   }, [totalPages]);
+
+  const rowCount = tableData.length;
+  const canGoPrev = meta?.hasPrevious !== undefined ? meta.hasPrevious : page > 1;
+  const canGoNext = React.useMemo(() => {
+    if (totalPages != null) return page < totalPages;
+    if (meta?.hasNext !== undefined) return meta.hasNext;
+    if (page === 1 && rowCount === 0) return false;
+    return rowCount >= effectivePerPage;
+  }, [totalPages, page, meta?.hasNext, rowCount, effectivePerPage]);
+
+  const showPagination = data !== undefined && !isError;
 
   const columns = React.useMemo((): ColumnDef<TRecord>[] => {
     return (config.columns || []).map((col) => {
@@ -316,6 +333,16 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   const c = React.useMemo(() => mergeDataTableClassNames(config.classNames), [config.classNames]);
   const labels = React.useMemo(() => mergeDataTableLabels(config.labels), [config.labels]);
   const LC = config.layoutComponents;
+
+  const paginationSummary = React.useMemo(() => {
+    if (totalCount != null) {
+      if (totalCount === 0) return labels.emptyDataset;
+      const start = (page - 1) * effectivePerPage + 1;
+      const end = Math.min(page * effectivePerPage, totalCount);
+      return formatLabel(labels.showingRange, { start, end, total: totalCount });
+    }
+    return formatLabel(labels.rowsThisPage, { count: rowCount });
+  }, [totalCount, page, effectivePerPage, rowCount, labels]);
 
   const hasHeaderBlock = Boolean(config.pageHeader || (config.actions && config.actions.length > 0));
   const actionsBar =
@@ -464,8 +491,6 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
     <div className={joinClasses(c.tableOuter)}>{tableInner}</div>
   );
 
-  const showPagination = totalPages != null && totalPages > 1;
-
   return (
     <div className={joinClasses(c.root)}>
       {headerSection}
@@ -476,11 +501,14 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
           <div className={joinClasses(c.paginationInfo)}>
             <p>
               {labels.pageLabel} {page}
-              {totalPages ? ` ${labels.ofLabel} ${totalPages}` : ''}
-              {data?.meta?.total != null && (
-                <span className={joinClasses(c.paginationMeta)}>
-                  {` (${data.meta.total} ${labels.itemsLabel})`}
-                </span>
+              {totalPages != null && (
+                <>
+                  {' '}
+                  {labels.ofLabel} {totalPages}
+                </>
+              )}
+              {paginationSummary != null && paginationSummary !== '' && (
+                <span className={joinClasses(c.paginationMeta)}>{` · ${paginationSummary}`}</span>
               )}
             </p>
           </div>
@@ -488,7 +516,7 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
             <button
               type="button"
               className={joinClasses(c.paginationButton)}
-              disabled={page === 1 || isFetching}
+              disabled={!canGoPrev || isFetching}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
               {labels.prev}
@@ -496,8 +524,8 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
             <button
               type="button"
               className={joinClasses(c.paginationButton)}
-              disabled={page === totalPages || isFetching}
-              onClick={() => setPage((p) => Math.min(totalPages!, p + 1))}
+              disabled={!canGoNext || isFetching}
+              onClick={() => setPage((p) => p + 1)}
             >
               {labels.next}
             </button>

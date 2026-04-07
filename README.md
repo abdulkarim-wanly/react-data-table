@@ -271,6 +271,14 @@ const config: DataTableConfig<Row, Filters> = {
 | `labels` | Partial **`DataTableLabels`** — error/empty/pagination copy |
 | `layoutComponents` | Optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** to replace default layout wrappers |
 
+### Pagination and `meta`
+
+After the first successful load (and while not in an error state), the table shows a **pagination row** below the grid: **Page X**, and when **`meta.total`** is set also **of Y**, plus a short summary (**`labels.showingRange`** with `{{start}}`, `{{end}}`, `{{total}}`, or **`labels.emptyDataset`** when the total is zero). If **`total`** is omitted, the summary uses **`labels.rowsThisPage`** (`{{count}} on this page`) and **“of Y”** is hidden.
+
+**Previous** is disabled when there is nowhere to go back (`page === 1` unless **`meta.hasPrevious`** is set). **Next** is disabled when **`page >= totalPages`** if **`total`** was provided; otherwise **`meta.hasNext`** is used when present, or a small heuristic (full page of rows ⇒ maybe another page).
+
+For predictable behaviour on the last page and when there is only one page, return **`meta.total`** from **`getAll`** (and optionally echo **`perPage`**). Cursor-style APIs can omit **`total`** and set **`hasNext`** / **`hasPrevious`** instead.
+
 ---
 
 ### `filtersUI` shapes (no `renderFilters` needed)
