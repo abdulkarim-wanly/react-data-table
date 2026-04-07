@@ -145,7 +145,6 @@ describe('DataTable view modes', () => {
         renderGridItem: ({ record }) => React.createElement('div', null, record.name),
         renderListItem: ({ record }) => React.createElement('div', null, record.name),
         map: {
-          accessToken: 'test-token',
           getCoordinates: () => ({ lat: 33.3152, lng: 44.3661 }),
           renderCard: ({ record }) => React.createElement('div', null, record.name),
         },
@@ -214,7 +213,6 @@ describe('DataTable view modes', () => {
           modes: ['table', 'map'],
           defaultMode: 'map',
           map: {
-            accessToken: 'test-token',
             sidebarTitle: 'Property locations',
             getCoordinates: () => ({ lat: 33.3152, lng: 44.3661 }),
             renderCard: ({ record }) =>

@@ -14,7 +14,7 @@ Configurable **React** data table built on [**TanStack Table**](https://tanstack
 | `@tanstack/react-table` | v8 |
 | `react-i18next` | >= 11 (e.g. 15.x is supported) + `i18next` |
 | `lucide-react` | >= 0.400 - icons used by the built-in search UI |
-| `mapbox-gl` | v3 when you use the built-in map view |
+| `leaflet` | v1.9 when you use the built-in map view |
 
 ## Installation
 
@@ -50,7 +50,7 @@ npm install git+https://github.com/YOUR_ORG/YOUR_REPO.git
 Then add **peer dependencies** in the same project (npm does not always install peers for git deps):
 
 ```bash
-npm install @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react mapbox-gl
+npm install @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react leaflet
 ```
 
 **Note:** The repo is set up so **`dist/`** is not required in Git — the first install runs **`npm run build`** via **`prepare`**. If you prefer faster installs and no build on the consumer machine, you can commit **`dist/`** and remove **`dist/`** from **`.gitignore`** (optional).
@@ -68,7 +68,7 @@ npm install @tanstack/react-query @tanstack/react-table react-i18next i18next lu
 ### From the npm registry (optional)
 
 ```bash
-npm install genesis-react-data-table @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react mapbox-gl
+npm install genesis-react-data-table @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react leaflet
 ```
 
 If npm reports peer conflicts, align versions with the table above, or use `npm install --legacy-peer-deps` only as a last resort.
@@ -246,15 +246,15 @@ const config: DataTableConfig<Row, Filters> = {
 
 `query.filters` is a **`MergedTableFilters<TFilters>`**: your fields plus optional **`search`** / **`searchFields`** when the built-in search bar is enabled.
 
-### Mapbox CSS
+### Leaflet CSS (map view)
 
-If you use the built-in **map** view, import Mapbox GL CSS once in your app bootstrap:
+If you use the built-in **map** view, import Leaflet’s CSS once in your app bootstrap (for correct tiles, controls, and popups):
 
 ```ts
-import "mapbox-gl/dist/mapbox-gl.css";
+import "leaflet/dist/leaflet.css";
 ```
 
-Mapbox GL also requires an access token for tile rendering.
+The default tiles are **OpenStreetMap**; no API key is required. Follow the [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/) for production traffic (attribution is included by default). You can point `views.map.tileLayerUrl` / `tileAttribution` at another raster provider if you prefer.
 
 ---
 
@@ -373,7 +373,7 @@ Exposed on toolbar actions, row actions, **`filtersUI`**, and **`renderFilters`*
 - **`table`** — the default column-based layout
 - **`grid`** — card/grid layout driven by your `renderGridItem`
 - **`list`** — stacked list layout driven by your `renderListItem`
-- **`map`** — split layout with a results sidebar and interactive Mapbox map
+- **`map`** — split layout with a results sidebar and an interactive map (Leaflet + OpenStreetMap by default)
 
 Grid, list, and map are intentionally renderer-driven because the library cannot safely guess how your record should appear outside the tabular column model.
 
@@ -410,7 +410,6 @@ const config: DataTableConfig<Row> = {
       </div>
     ),
     map: {
-      accessToken: import.meta.env.VITE_MAPBOX_TOKEN,
       getCoordinates: (record) => ({ lat: record.lat, lng: record.lng }),
       renderCard: ({ record, isActive }) => (
         <article className={isActive ? "rounded-xl border border-blue-400 p-4" : "rounded-xl border p-4"}>
@@ -427,7 +426,7 @@ Notes:
 
 - Include `grid` in `views.modes` only when `renderGridItem` is provided.
 - Include `list` in `views.modes` only when `renderListItem` is provided.
-- Include `map` in `views.modes` only when `views.map` includes `accessToken`, `getCoordinates`, and `renderCard`.
+- Include `map` in `views.modes` only when `views.map` includes `getCoordinates` and `renderCard`.
 - The built-in toggle appears automatically when more than one valid mode is available.
 - The user's last chosen view mode is persisted in `localStorage` by default using the table id.
 - Disable persistence with `views.persistMode = false`, or override the storage key with `views.storageKey`.
@@ -438,7 +437,7 @@ Notes:
 The built-in map view renders a two-panel layout:
 
 - left: scrollable result cards from `views.map.renderCard`
-- right: interactive Mapbox GL map with markers for rows that return valid coordinates
+- right: interactive Leaflet map (OpenStreetMap tiles by default) with markers for rows that return valid coordinates
 
 Use `views.map` to control it:
 
@@ -446,7 +445,6 @@ Use `views.map` to control it:
 views: {
   modes: ["table", "map"],
   map: {
-    accessToken: import.meta.env.VITE_MAPBOX_TOKEN,
     getCoordinates: (record) => ({ lat: record.lat, lng: record.lng }),
     renderCard: ({ record, isActive, select }) => (
       <button type="button" onClick={select} className={isActive ? "border-blue-500" : ""}>
@@ -455,7 +453,6 @@ views: {
     ),
     renderPopup: ({ record }) => <div>{record.name}</div>,
     sidebarTitle: "Property locations",
-    mapStyle: "mapbox://styles/mapbox/standard",
     initialZoom: 10,
     fitBoundsPadding: 72,
     showNavigation: true,

@@ -136,12 +136,15 @@ export interface DataTableMapItemRenderArgs<TRecord, TFilters extends FilterValu
 }
 
 export interface DataTableMapViewConfig<TRecord, TFilters extends FilterValues = FilterValues> {
-  accessToken: string;
   getCoordinates: (record: TRecord) => DataTableMapCoordinates | null | undefined;
   renderCard: (args: DataTableMapItemRenderArgs<TRecord, TFilters>) => ReactNode;
   renderPopup?: (args: DataTableMapItemRenderArgs<TRecord, TFilters>) => ReactNode;
   sidebarTitle?: ReactNode;
-  mapStyle?: string;
+  /** Raster tile URL template (Leaflet `{s}`, `{z}`, `{x}`, `{y}`). Defaults to OpenStreetMap’s standard tile layer. */
+  tileLayerUrl?: string;
+  /** Attribution HTML string for the tile layer (required by most tile providers). */
+  tileAttribution?: string;
+  /** Map center as `[lng, lat]` (same component order as GeoJSON coordinates). */
   initialCenter?: [number, number];
   initialZoom?: number;
   fitBoundsPadding?: number;

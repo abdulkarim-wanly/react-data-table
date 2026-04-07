@@ -376,9 +376,7 @@ export function DataTable<
         mode === "map" &&
         config.views?.map &&
         typeof config.views.map.getCoordinates === "function" &&
-        typeof config.views.map.renderCard === "function" &&
-        typeof config.views.map.accessToken === "string" &&
-        config.views.map.accessToken.trim() !== ""
+        typeof config.views.map.renderCard === "function"
       ) {
         nextModes.push(mode);
       }

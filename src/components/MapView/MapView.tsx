@@ -1,6 +1,6 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { Map as MapboxMap, Marker as MapboxMarker, Popup as MapboxPopup } from 'mapbox-gl';
+import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 
 import type { DataTableClassNames, DataTableLabels } from '../../dataTableLayout';
 import type {
@@ -35,10 +35,13 @@ type MappedRecord<TRecord> = {
 };
 
 type MarkerEntry = {
-  marker: MapboxMarker;
+  marker: LeafletMarker;
   element: HTMLButtonElement;
-  popup?: MapboxPopup;
 };
+
+const DEFAULT_TILE_LAYER_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const DEFAULT_TILE_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 function hasValidCoordinates(value: DataTableMapCoordinates | null | undefined): value is DataTableMapCoordinates {
   return (
@@ -119,9 +122,10 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
   onOpenModal,
 }: MapViewProps<TRecord, TFilters>) {
   const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
-  const mapRef = React.useRef<MapboxMap | null>(null);
+  const mapRef = React.useRef<LeafletMap | null>(null);
   const markersRef = React.useRef<Map<number, MarkerEntry>>(new Map());
   const cardRefs = React.useRef<Map<number, HTMLButtonElement | null>>(new Map());
+  const activeIndexRef = React.useRef<number | null>(null);
   const [mapError, setMapError] = React.useState<string | null>(null);
 
   const mappedRecords = React.useMemo<MappedRecord<TRecord>[]>(() => {
@@ -135,6 +139,8 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
   }, [records, config]);
 
   const [activeIndex, setActiveIndex] = React.useState<number | null>(mappedRecords[0]?.index ?? null);
+
+  activeIndexRef.current = activeIndex;
 
   React.useEffect(() => {
     if (mappedRecords.some((item) => item.index === activeIndex)) return;
@@ -159,81 +165,87 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
 
     (async () => {
       try {
-        const mapboxModule = await import('mapbox-gl');
-        const mapboxgl = 'default' in mapboxModule ? mapboxModule.default : mapboxModule;
+        const leafletModule = await import('leaflet');
+        const L = leafletModule.default;
         if (isDisposed || !mapContainerRef.current) return;
 
-        mapboxgl.accessToken = config.accessToken;
-
-        const initialCenter =
+        const [lng0, lat0] =
           config.initialCenter ?? [mappedRecords[0].coordinates.lng, mappedRecords[0].coordinates.lat];
-        const map = new mapboxgl.Map({
-          container: mapContainerRef.current,
-          style: config.mapStyle ?? 'mapbox://styles/mapbox/standard',
-          center: initialCenter,
-          zoom: config.initialZoom ?? (mappedRecords.length > 1 ? 9 : 12),
+        const zoom = config.initialZoom ?? (mappedRecords.length > 1 ? 9 : 12);
+
+        const map = L.map(mapContainerRef.current, {
+          zoomControl: false,
           minZoom: config.minZoom,
           maxZoom: config.maxZoom,
-        });
+        }).setView([lat0, lng0], zoom);
 
         mapRef.current = map;
 
-        map.on('error', () => {
-          setMapError(labels.errorLoading);
-        });
+        L.tileLayer(config.tileLayerUrl ?? DEFAULT_TILE_LAYER_URL, {
+          attribution: config.tileAttribution ?? DEFAULT_TILE_ATTRIBUTION,
+        }).addTo(map);
 
         if (config.showNavigation !== false) {
-          map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+          L.control.zoom({ position: 'topright' }).addTo(map);
         }
 
-        const bounds = new mapboxgl.LngLatBounds();
+        const bounds = L.latLngBounds([]);
 
         mappedRecords.forEach((item) => {
-          bounds.extend([item.coordinates.lng, item.coordinates.lat]);
+          bounds.extend([item.coordinates.lat, item.coordinates.lng]);
 
           const markerElement = createMarkerElement(() => selectItem(item.index));
-          const marker = new mapboxgl.Marker({ element: markerElement, anchor: 'center' })
-            .setLngLat([item.coordinates.lng, item.coordinates.lat])
-            .addTo(map);
+
+          const icon = L.divIcon({
+            className: 'grdt-leaflet-marker',
+            html: '',
+            iconSize: [22, 22],
+            iconAnchor: [11, 11],
+          });
+
+          const marker = L.marker([item.coordinates.lat, item.coordinates.lng], { icon }).addTo(map);
+
+          const iconEl = marker.getElement();
+          if (iconEl) {
+            iconEl.style.background = 'transparent';
+            iconEl.style.border = 'none';
+            iconEl.appendChild(markerElement);
+          }
+
+          marker.on('click', () => {
+            selectItem(item.index);
+          });
 
           const args: DataTableMapItemRenderArgs<TRecord, TFilters> = {
             record: item.record,
             index: item.index,
             context,
             coordinates: item.coordinates,
-            isActive: item.index === activeIndex,
+            isActive: item.index === activeIndexRef.current,
             select: () => selectItem(item.index),
             onOpenModal,
           };
 
           const popupMarkup = getPopupMarkup(config.renderPopup, args, classNames.mapPopup);
-          let popup: MapboxPopup | undefined;
           if (popupMarkup) {
-            popup = new mapboxgl.Popup({
+            marker.bindPopup(popupMarkup, {
               closeButton: false,
+              autoClose: false,
               closeOnClick: false,
-              offset: 16,
-            }).setHTML(popupMarkup);
-            marker.setPopup(popup);
+              className: classNames.mapPopup,
+            });
           }
-
-          marker.getElement().addEventListener('click', () => {
-            selectItem(item.index);
-            if (popup && !popup.isOpen()) {
-              popup.addTo(map);
-            }
-          });
 
           markersRef.current.set(item.index, {
             marker,
             element: markerElement,
-            popup,
           });
         });
 
         if (mappedRecords.length > 1) {
+          const pad = config.fitBoundsPadding ?? 72;
           map.fitBounds(bounds, {
-            padding: config.fitBoundsPadding ?? 72,
+            padding: [pad, pad],
             maxZoom: config.initialZoom ?? 13,
           });
         }
@@ -252,7 +264,6 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
       mapRef.current = null;
     };
   }, [
-    activeIndex,
     classNames.mapPopup,
     config,
     context,
@@ -268,25 +279,43 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
     markersRef.current.forEach((entry, index) => {
       const isActive = index === activeIndex;
       applyMarkerStyles(entry.element, isActive);
-      if (!entry.popup) return;
+
+      const item = mappedRecords.find((m) => m.index === index);
+      if (!item) return;
+
+      const popup = entry.marker.getPopup();
+      if (!popup) return;
+
+      const args: DataTableMapItemRenderArgs<TRecord, TFilters> = {
+        record: item.record,
+        index: item.index,
+        context,
+        coordinates: item.coordinates,
+        isActive,
+        select: () => selectItem(item.index),
+        onOpenModal,
+      };
+
+      const popupMarkup = getPopupMarkup(config.renderPopup, args, classNames.mapPopup);
+      if (popupMarkup) {
+        entry.marker.setPopupContent(popupMarkup);
+      }
       if (isActive) {
-        if (!entry.popup.isOpen()) {
-          entry.popup.addTo(mapRef.current!);
-        }
-      } else if (entry.popup.isOpen()) {
-        entry.popup.remove();
+        entry.marker.openPopup();
+      } else {
+        entry.marker.closePopup();
       }
     });
 
     if (activeIndex == null || !mapRef.current) return;
     const selected = mappedRecords.find((item) => item.index === activeIndex);
     if (!selected) return;
-    mapRef.current.flyTo({
-      center: [selected.coordinates.lng, selected.coordinates.lat],
-      zoom: Math.max(mapRef.current.getZoom(), config.initialZoom ?? 12),
-      essential: true,
-    });
-  }, [activeIndex, config.initialZoom, mappedRecords]);
+    mapRef.current.flyTo(
+      [selected.coordinates.lat, selected.coordinates.lng],
+      Math.max(mapRef.current.getZoom(), config.initialZoom ?? 12),
+      { animate: true }
+    );
+  }, [activeIndex, classNames.mapPopup, config, context, mappedRecords, onOpenModal, selectItem]);
 
   return (
     <div className={classNames.mapViewRoot}>

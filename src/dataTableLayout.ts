@@ -64,7 +64,7 @@ export interface DataTableClassNames {
   mapCardActive: string;
   /** Shell around the interactive map canvas */
   mapCanvasShell: string;
-  /** Actual map canvas div mounted by Mapbox */
+  /** Actual map canvas div mounted by Leaflet */
   mapCanvas: string;
   /** Empty/error state wrapper used by map view */
   mapEmptyState: string;
