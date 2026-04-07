@@ -232,19 +232,39 @@ const config: DataTableConfig<Row, Filters> = {
    },
    ```
 
-3. **Object with `Component`** — for configs that already expose **`formConfig()`** and **`onApply({ values, context })`**:
+3. **Object with only `formConfig` + `onApply`** (e.g. grid layout, Bitrix `request` / `mapOptions` fields) — the package does not ship your dynamic form. Register **one** host component for the whole app:
+
+   **`main.tsx` / app bootstrap (once):**
+
+   ```tsx
+   import { setDefaultDataTableFiltersHost } from "genesis-react-data-table";
+   import { UnitDealsFiltersHost } from "@/components/filters/UnitDealsFiltersHost";
+
+   setDefaultDataTableFiltersHost(UnitDealsFiltersHost);
+   ```
+
+   **`UnitDealsFiltersHost`** implements **`DataTableFiltersUIHostProps`**: it receives **`formConfig`** (the object returned by your `formConfig()`), **`onApply(values)`**, **`context`**, and **`filtersUI`** (the full config bag). Inside, render your existing dynamic form (the same one you used with the old table).
+
+   **Per-table config** stays as you already have it:
 
    ```tsx
    filtersUI: {
-     formConfig: () => ({ fields: [...] }),
-     onApply: ({ values, context }) => context.applyFilters(clean(values)),
-     Component: MyFiltersHost, // must render using formConfig / onApply props from the table
+     formConfig: () => ({ id: "deals-filters", layout: { type: "grid", columns: 3 }, fields: [...] }),
+     onApply: ({ values, context }) => context.applyFilters(cleanFilters(values)),
    },
    ```
 
-   Your **`MyFiltersHost`** receives **`context`**, **`formConfig`**, **`onApply(values)`**, and **`filtersUI`** (the full bag).
+4. **Object with `Component`** — same as (3) but **per table**, overriding the default host:
 
-If `filtersUI` is an object with only `formConfig` / `onApply` and **no** `render` or `Component`, nothing is rendered until you add one of those.
+   ```tsx
+   filtersUI: {
+     formConfig: () => ({ ... }),
+     onApply: ({ values, context }) => context.applyFilters(clean(values)),
+     Component: OtherTableFiltersHost,
+   },
+   ```
+
+If you never call **`setDefaultDataTableFiltersHost`** and omit **`Component`**, a bag with only **`formConfig` + `onApply`** renders nothing.
 
 ---
 
@@ -279,9 +299,11 @@ Wire **`onOpenModal`** on **`DataTable`** if actions return **`openModal`** payl
 
 ## Exports
 
-**Components:** `DataTable`, `ActionButtonsBar`, `UserActionCell`, `SearchInput`, `InlineFiltersUI` (stub), `componentCell` (column helper).
+**Components:** `DataTable`, `ActionButtonsBar`, `UserActionCell`, `SearchInput`, `InlineFiltersUI`, `componentCell` (column helper).
 
-**Types:** `DataTableConfig`, `DataTableProps`, `DataTableActionsContext`, `DataTableColumnDef`, `ServiceQuery`, `ServiceResult`, `DataTableQueryMeta`, `FilterValues`, `MergedTableFilters`, `TableAction`, `RowAction`, `ModalPayload`, `ModalRegistryHandler`, `OpenModalCallback`, …
+**Registration:** `setDefaultDataTableFiltersHost` — see **`filtersUI`** section above.
+
+**Types:** `DataTableConfig`, `DataTableProps`, `DataTableActionsContext`, `DataTableColumnDef`, `DataTableFiltersUIHostProps`, `DataTableFiltersUISlot`, `ServiceQuery`, `ServiceResult`, …
 
 **Util:** `isModalPayload` (for custom modal flows).
 

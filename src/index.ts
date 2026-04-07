@@ -25,10 +25,12 @@ export { isModalPayload } from './tableTypes';
 
 export type {
   DataTableFiltersUIBag,
+  DataTableFiltersUIHostProps,
   DataTableFiltersUISlot,
   InlineFiltersRenderArgs,
   InlineFiltersUIProps,
 } from './components/InlineFiltersUI/InlineFiltersUI';
+export { setDefaultDataTableFiltersHost } from './components/InlineFiltersUI/InlineFiltersUI';
 
 export type { TableAction, ActionButtonsBarProps } from './components/ActionButtonsBar/ActionButtonsBar';
 export { ActionButtonsBar } from './components/ActionButtonsBar/ActionButtonsBar';
