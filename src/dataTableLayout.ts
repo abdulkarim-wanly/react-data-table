@@ -17,6 +17,12 @@ export interface DataTableClassNames {
   actionsWrapper: string;
   /** Wraps inline filters + search row */
   filtersAndSearchRow: string;
+  /** Wraps the built-in view mode toggle buttons */
+  viewModeToggle: string;
+  /** Shared class for each built-in view mode button */
+  viewModeButton: string;
+  /** Added to the active built-in view mode button */
+  viewModeButtonActive: string;
   /** Extra wrapper around {@link SearchInput} */
   searchWrapper: string;
   /** Passed to SearchInput `className` (width, flex, etc.) */
@@ -36,6 +42,14 @@ export interface DataTableClassNames {
   skeletonRow: string;
   skeletonBar: string;
   messageCell: string;
+  /** Wrapper for card-like grid items */
+  gridView: string;
+  /** Wrapper around a single grid item renderer */
+  gridItem: string;
+  /** Wrapper for stacked list items */
+  listView: string;
+  /** Wrapper around a single list item renderer */
+  listItem: string;
   pagination: string;
   paginationInfo: string;
   paginationMeta: string;
@@ -51,6 +65,9 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   pageSubtitle: '',
   actionsWrapper: '',
   filtersAndSearchRow: 'flex flex-col gap-3',
+  viewModeToggle: 'flex items-center gap-2 flex-wrap',
+  viewModeButton: '',
+  viewModeButtonActive: '',
   searchWrapper: '',
   searchInput: 'max-w-md',
   tableOuter: 'overflow-auto',
@@ -65,6 +82,10 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   skeletonRow: '',
   skeletonBar: 'h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700 animate-pulse',
   messageCell: '',
+  gridView: 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3',
+  gridItem: '',
+  listView: 'flex flex-col gap-3',
+  listItem: '',
   pagination: 'flex items-center justify-between gap-3 text-sm mt-2',
   paginationInfo: '',
   paginationMeta: 'text-muted-foreground',
@@ -83,6 +104,9 @@ export interface DataTableLabels {
   noResults: string;
   /** Header text for the built-in row actions column. */
   actionsColumn: string;
+  viewAsTable: string;
+  viewAsGrid: string;
+  viewAsList: string;
   pageLabel: string;
   ofLabel: string;
   itemsLabel: string;
@@ -100,6 +124,9 @@ export const DEFAULT_DATA_TABLE_LABELS: DataTableLabels = {
   errorLoading: 'Error loading data',
   noResults: 'No results',
   actionsColumn: 'Actions',
+  viewAsTable: 'Table',
+  viewAsGrid: 'Grid',
+  viewAsList: 'List',
   pageLabel: 'Page',
   ofLabel: 'of',
   itemsLabel: 'items',

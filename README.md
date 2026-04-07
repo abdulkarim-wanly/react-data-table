@@ -1,6 +1,6 @@
 # genesis-react-data-table
 
-Configurable **React** data table built on [**TanStack Table**](https://tanstack.com/table) v8 and [**TanStack Query**](https://tanstack.com/query) v5. Includes search, pagination, sorting, toolbar actions, row actions, optional custom filter UI, and **full TypeScript** generics for row and filter types.
+Configurable **React** data table built on [**TanStack Table**](https://tanstack.com/table) v8 and [**TanStack Query**](https://tanstack.com/query) v5. Includes search, pagination, sorting, toolbar actions, row actions, optional custom filter UI, built-in **table / grid / list** view modes, and **full TypeScript** generics for row and filter types.
 
 ## Requirements
 
@@ -135,7 +135,7 @@ The table ships with **plain defaults** (`DEFAULT_DATA_TABLE_CLASSNAMES`). Overr
 
 **`config.classNames`** — partial map of regions (root, `headerCard`, `tableOuter`, `tableScroll`, `tableHeadCellSortable`, pagination, skeleton bars, etc.). Import **`DEFAULT_DATA_TABLE_CLASSNAMES`** or **`mergeDataTableClassNames`** if you want to extend defaults in code.
 
-**`config.labels`** — strings for error/empty/pagination. Default is English; pass values from **`t('…')`** if you use i18n.
+**`config.labels`** — strings for error/empty/pagination and built-in view mode labels. Default is English; pass values from **`t('…')`** if you use i18n.
 
 **`config.layoutComponents`** — optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** components. Each receives **`classNames`** (the merged tokens for that region) and **`children`** (toolbar/shell). Use these when you need a **glass card**, sticky header chrome, or a **`PageHeader`** that matches the rest of your app.
 
@@ -255,6 +255,7 @@ const config: DataTableConfig<Row, Filters> = {
 | `columns` | TanStack **`ColumnDef<TRecord>[]`**; you may use **`sortable?: boolean`** (alias for `enableSorting`) |
 | `rowActions` | **`RowAction<TRecord, TFilters>[]`** rendered by `DataTable` as a built-in trailing actions column |
 | `actions` | **`TableAction<TRecord, TFilters>[]`** for toolbar buttons |
+| `views` | Optional built-in view mode config for `table`, `grid`, and `list` |
 | `id` | Stable table id (default `"table"`); used in modal registry keys |
 | `queryKey` | Extra React Query key prefix; defaults to `[id]` |
 | `defaultPerPage` | Page size (default `10`) |
@@ -343,11 +344,66 @@ Exposed on toolbar actions, row actions, **`filtersUI`**, and **`renderFilters`*
 
 - **`refetch`**, **`refresh`**, **`isFetching`**
 - **`page`**, **`perPage`**, **`setPage`**, **`setPerPage`**
+- **`viewMode`**, **`setViewMode`**
 - **`sorting`**, **`setSorting`**
 - **`filters`**, **`setFilters`**, **`applyFilters`**, **`resetFilters`**
 - **`setSearchValue`** (wired to internal search state)
 - **`rows`** — current page data: **`TRecord[]`**
 - **`meta`** — last **`ServiceResult`** meta or **`undefined`**
+
+---
+
+## View modes
+
+`DataTable` supports three built-in display modes:
+
+- **`table`** — the default column-based layout
+- **`grid`** — card/grid layout driven by your `renderGridItem`
+- **`list`** — stacked list layout driven by your `renderListItem`
+
+Grid and list are intentionally renderer-driven because the library cannot safely guess how your record should appear outside the tabular column model.
+
+```tsx
+import { DataTable, type DataTableConfig } from "genesis-react-data-table";
+
+type Row = { id: string; name: string; email: string };
+
+const config: DataTableConfig<Row> = {
+  service: {
+    getAll: async (query) => ({
+      data: [],
+      meta: { total: 0, page: query.page, perPage: query.perPage },
+    }),
+  },
+  columns: [
+    { accessorKey: "name", header: "Name" },
+    { accessorKey: "email", header: "Email" },
+  ],
+  views: {
+    modes: ["table", "grid", "list"],
+    defaultMode: "table",
+    renderGridItem: ({ record }) => (
+      <article className="rounded-xl border p-4">
+        <h3 className="font-semibold">{record.name}</h3>
+        <p className="text-sm text-muted-foreground">{record.email}</p>
+      </article>
+    ),
+    renderListItem: ({ record }) => (
+      <div className="flex items-center justify-between rounded-lg border p-3">
+        <span>{record.name}</span>
+        <span className="text-sm text-muted-foreground">{record.email}</span>
+      </div>
+    ),
+  },
+};
+```
+
+Notes:
+
+- Include `grid` in `views.modes` only when `renderGridItem` is provided.
+- Include `list` in `views.modes` only when `renderListItem` is provided.
+- The built-in toggle appears automatically when more than one valid mode is available.
+- Customize toggle labels through `config.labels.viewAsTable`, `config.labels.viewAsGrid`, and `config.labels.viewAsList`.
 
 ---
 
@@ -374,7 +430,7 @@ Wire **`onOpenModal`** on **`DataTable`** if actions return **`openModal`** payl
 
 **Registration:** `setDefaultDataTableFiltersHost` from **`genesis-react-data-table`** or **`genesis-react-data-table/setup`** — see **`filtersUI`** and **Vite** sections above.
 
-**Types:** `DataTableConfig`, `DataTableProps`, `DataTableActionsContext`, `DataTableColumnDef`, `DataTableFiltersUIHostProps`, `DataTableFiltersUISlot`, `ServiceQuery`, `ServiceResult`, …
+**Types:** `DataTableConfig`, `DataTableProps`, `DataTableViewsConfig`, `DataTableActionsContext`, `DataTableColumnDef`, `DataTableFiltersUIHostProps`, `DataTableFiltersUISlot`, `DataTableViewMode`, `DataTableViewRendererArgs`, `ServiceQuery`, `ServiceResult`, …
 
 **Util:** `isModalPayload` (for custom modal flows).
 

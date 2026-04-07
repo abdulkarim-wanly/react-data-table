@@ -74,6 +74,8 @@ export type OpenModalCallbackProps = Record<string, unknown>;
 
 export type OpenModalCallback = (type: string, props: OpenModalCallbackProps) => void;
 
+export type DataTableViewMode = 'table' | 'grid' | 'list';
+
 export type DataTableRefetch<TRecord> = (
   options?: RefetchOptions
 ) => Promise<QueryObserverResult<ServiceResult<TRecord> | undefined, Error>>;
@@ -87,6 +89,7 @@ export interface DataTableActionsContext<TRecord, TFilters extends FilterValues 
   isFetching: boolean;
   page: number;
   perPage: number;
+  viewMode: DataTableViewMode;
   sorting: SortingState;
   filters: MergedTableFilters<TFilters>;
   /** Rows from the current page (latest successful query). */
@@ -95,6 +98,7 @@ export interface DataTableActionsContext<TRecord, TFilters extends FilterValues 
   meta: DataTableQueryMeta | undefined;
   setPage: Dispatch<SetStateAction<number>>;
   setPerPage: Dispatch<SetStateAction<number>>;
+  setViewMode: Dispatch<SetStateAction<DataTableViewMode>>;
   setSorting: Dispatch<SetStateAction<SortingState>>;
   setFilters: Dispatch<SetStateAction<MergedTableFilters<TFilters>>>;
   setSearchValue: Dispatch<SetStateAction<string>>;
@@ -111,6 +115,13 @@ export type TableIconComponent = ComponentType<{ className?: string }>;
 export type DataTableColumnDef<TRecord> = ColumnDef<TRecord> & {
   sortable?: boolean;
 };
+
+export interface DataTableViewRendererArgs<TRecord, TFilters extends FilterValues = FilterValues> {
+  record: TRecord;
+  index: number;
+  context: DataTableActionsContext<TRecord, TFilters>;
+  onOpenModal?: OpenModalCallback;
+}
 
 export type ModalRegistryArgs<TRecord, TFilters extends FilterValues = FilterValues> =
   | { context: DataTableActionsContext<TRecord, TFilters> }

@@ -2,7 +2,7 @@
 // of the library so consumers can import from the package root. Keep this
 // list concise and only export what should be part of the public API.
 
-export type { DataTableConfig, DataTableProps } from './components/DataTable/DataTable';
+export type { DataTableConfig, DataTableProps, DataTableViewsConfig } from './components/DataTable/DataTable';
 export { DataTable } from './components/DataTable/DataTable';
 
 export type {
@@ -10,6 +10,8 @@ export type {
   DataTableColumnDef,
   DataTableQueryMeta,
   DataTableSearchFilterKeys,
+  DataTableViewMode,
+  DataTableViewRendererArgs,
   FilterValues,
   MergedTableFilters,
   ModalOpenAsyncResult,

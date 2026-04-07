@@ -8,6 +8,7 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 
+import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { SearchInput } from '../SearchInput/SearchInput';
 import { UserActionCell, RowAction } from '../UserActionCell/UserActionCell';
@@ -16,6 +17,8 @@ import { InlineFiltersUI, type DataTableFiltersUISlot } from '../InlineFiltersUI
 import type {
   DataTableActionsContext,
   DataTableColumnDef,
+  DataTableViewMode,
+  DataTableViewRendererArgs,
   FilterValues,
   MergedTableFilters,
   ModalRegistryHandler,
@@ -58,6 +61,7 @@ export interface DataTableConfig<TRecord, TFilters extends FilterValues = Filter
   rowActions?: RowAction<TRecord, TFilters>[];
   defaultPerPage?: number;
   actions?: TableAction<TRecord, TFilters>[];
+  views?: DataTableViewsConfig<TRecord, TFilters>;
   /**
    * Inline filters slot. When set and `renderFilters` is omitted, `DataTable` renders
    * {@link InlineFiltersUI} with this value (function, `{ render }`, or `{ Component, formConfig, onApply }`).
@@ -110,6 +114,20 @@ export interface DataTableConfig<TRecord, TFilters extends FilterValues = Filter
   layoutComponents?: DataTableLayoutComponents;
 }
 
+export interface DataTableViewsConfig<TRecord, TFilters extends FilterValues = FilterValues> {
+  /**
+   * Enabled built-in view modes. `table` remains the fallback when this list is empty
+   * or when a requested custom renderer is missing.
+   */
+  modes?: DataTableViewMode[];
+  /** Initial view mode used on first render when it is also available. */
+  defaultMode?: DataTableViewMode;
+  /** Required if you enable the `grid` view mode. */
+  renderGridItem?: (args: DataTableViewRendererArgs<TRecord, TFilters>) => React.ReactNode;
+  /** Required if you enable the `list` view mode. */
+  renderListItem?: (args: DataTableViewRendererArgs<TRecord, TFilters>) => React.ReactNode;
+}
+
 export interface DataTableProps<TRecord, TFilters extends FilterValues = FilterValues> {
   config: DataTableConfig<TRecord, TFilters>;
 }
@@ -141,6 +159,7 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   const tableId = config.id || 'table';
   const [page, setPage] = React.useState(1);
   const [perPage, setPerPage] = React.useState(config.defaultPerPage ?? 10);
+  const [viewMode, setViewMode] = React.useState<DataTableViewMode>(config.views?.defaultMode ?? 'table');
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [filters, setFilters] = React.useState<MergedTableFilters<TFilters>>(
     () => ({}) as MergedTableFilters<TFilters>
@@ -197,6 +216,31 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   });
 
   const tableData = data?.data ?? [];
+  const availableViewModes = React.useMemo(() => {
+    const requested: DataTableViewMode[] = config.views?.modes?.length ? config.views.modes : ['table'];
+    const nextModes: DataTableViewMode[] = [];
+    requested.forEach((mode) => {
+      if (nextModes.includes(mode)) return;
+      if (mode === 'table') {
+        nextModes.push(mode);
+        return;
+      }
+      if (mode === 'grid' && typeof config.views?.renderGridItem === 'function') {
+        nextModes.push(mode);
+        return;
+      }
+      if (mode === 'list' && typeof config.views?.renderListItem === 'function') {
+        nextModes.push(mode);
+      }
+    });
+    return nextModes.length > 0 ? nextModes : (['table'] as DataTableViewMode[]);
+  }, [config.views]);
+  const currentViewMode = availableViewModes.includes(viewMode) ? viewMode : availableViewModes[0];
+
+  React.useEffect(() => {
+    if (availableViewModes.includes(viewMode)) return;
+    setViewMode(availableViewModes[0]);
+  }, [availableViewModes, viewMode]);
 
   const actionsContext = React.useMemo<DataTableActionsContext<TRecord, TFilters>>(() => {
     return {
@@ -204,12 +248,14 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
       isFetching,
       page,
       perPage,
+      viewMode: currentViewMode,
       sorting,
       filters,
       rows: tableData,
       meta: data?.meta,
       setPage,
       setPerPage,
+      setViewMode,
       setSorting,
       setFilters,
       setSearchValue,
@@ -224,7 +270,7 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
       },
       refresh: () => refetch(),
     };
-  }, [refetch, isFetching, page, perPage, sorting, filters, tableData, data?.meta]);
+  }, [refetch, isFetching, page, perPage, currentViewMode, sorting, filters, tableData, data?.meta]);
 
   const registryMap = React.useMemo(() => {
     const map: Record<string, ModalRegistryHandler<TRecord, TFilters>> = {};
@@ -424,11 +470,38 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
     <>
       {filtersEl}
       {searchEl}
+      {availableViewModes.length > 1 && (
+        <div className={joinClasses(c.viewModeToggle)}>
+          {availableViewModes.map((mode) => {
+            const label =
+              mode === 'grid'
+                ? labels.viewAsGrid
+                : mode === 'list'
+                  ? labels.viewAsList
+                  : labels.viewAsTable;
+            return (
+              <Button
+                key={mode}
+                type="button"
+                variant="outline"
+                className={joinClasses(
+                  c.viewModeButton,
+                  currentViewMode === mode ? c.viewModeButtonActive : ''
+                )}
+                aria-pressed={currentViewMode === mode}
+                onClick={() => setViewMode(mode)}
+              >
+                {label}
+              </Button>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 
   const toolbarSection =
-    (filtersEl || searchEl) &&
+    (filtersEl || searchEl || availableViewModes.length > 1) &&
     (LC?.Toolbar ? (
       <LC.Toolbar classNames={{ filtersAndSearchRow: c.filtersAndSearchRow }}>{toolbarInner}</LC.Toolbar>
     ) : (
@@ -500,10 +573,70 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
     </div>
   );
 
+  const renderCollectionItem = React.useCallback(
+    (record: TRecord, index: number) => {
+      const args: DataTableViewRendererArgs<TRecord, TFilters> = {
+        record,
+        index,
+        context: actionsContext,
+        onOpenModal: config.onOpenModal,
+      };
+      if (currentViewMode === 'grid' && config.views?.renderGridItem) {
+        return config.views.renderGridItem(args);
+      }
+      if (currentViewMode === 'list' && config.views?.renderListItem) {
+        return config.views.renderListItem(args);
+      }
+      return null;
+    },
+    [actionsContext, config.onOpenModal, config.views, currentViewMode]
+  );
+
+  const collectionInner =
+    currentViewMode === 'table' ? (
+      tableInner
+    ) : (
+      <div
+        className={joinClasses(
+          c.tableScroll,
+          currentViewMode === 'grid' ? c.gridView : c.listView
+        )}
+      >
+        {busy ? (
+          Array.from({ length: skeletonRows }).map((_, idx) => (
+            <div
+              key={idx}
+              className={joinClasses(
+                currentViewMode === 'grid' ? c.gridItem : c.listItem,
+                c.skeletonRow
+              )}
+            >
+              <div className={joinClasses(c.skeletonBar)} />
+            </div>
+          ))
+        ) : isError ? (
+          <div className={joinClasses(c.messageCell)}>{labels.errorLoading}</div>
+        ) : tableData.length === 0 ? (
+          <div className={joinClasses(c.messageCell)}>{labels.noResults}</div>
+        ) : (
+          tableData.map((record, index) => (
+            <div
+              key={index}
+              className={joinClasses(currentViewMode === 'grid' ? c.gridItem : c.listItem)}
+            >
+              {renderCollectionItem(record, index)}
+            </div>
+          ))
+        )}
+      </div>
+    );
+
   const tableSection = LC?.TableShell ? (
-    <LC.TableShell classNames={{ tableOuter: c.tableOuter, tableScroll: c.tableScroll }}>{tableInner}</LC.TableShell>
+    <LC.TableShell classNames={{ tableOuter: c.tableOuter, tableScroll: c.tableScroll }}>
+      {collectionInner}
+    </LC.TableShell>
   ) : (
-    <div className={joinClasses(c.tableOuter)}>{tableInner}</div>
+    <div className={joinClasses(c.tableOuter)}>{collectionInner}</div>
   );
 
   return (
