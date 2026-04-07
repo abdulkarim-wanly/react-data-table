@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { SearchInput } from '../SearchInput/SearchInput';
 import { UserActionCell, RowAction } from '../UserActionCell/UserActionCell';
 import { ActionButtonsBar, TableAction } from '../ActionButtonsBar/ActionButtonsBar';
+import { InlineFiltersUI, type DataTableFiltersUISlot } from '../InlineFiltersUI/InlineFiltersUI';
 import type {
   DataTableActionsContext,
   DataTableColumnDef,
@@ -42,11 +43,14 @@ export interface DataTableConfig<TRecord, TFilters extends FilterValues = Filter
   rowActions?: RowAction<TRecord, TFilters>[];
   defaultPerPage?: number;
   actions?: TableAction<TRecord, TFilters>[];
-  /** @deprecated Prefer `renderFilters`. Kept for compatibility; not rendered by this component. */
-  filtersUI?: unknown;
   /**
-   * Render advanced filters (e.g. your form config). Receives live table context
-   * so you can call `context.applyFilters`, `context.resetFilters`, etc.
+   * Inline filters slot. When set and `renderFilters` is omitted, `DataTable` renders
+   * {@link InlineFiltersUI} with this value (function, `{ render }`, or `{ Component, formConfig, onApply }`).
+   */
+  filtersUI?: DataTableFiltersUISlot<TRecord, TFilters>;
+  /**
+   * Optional override for the filters region. When set, it replaces the default
+   * `InlineFiltersUI` branch (ignores `filtersUI` for that slot).
    */
   renderFilters?: (context: DataTableActionsContext<TRecord, TFilters>) => React.ReactNode;
   recordById?: {
@@ -306,7 +310,11 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
           )}
         </div>
       )}
-      {typeof config.renderFilters === 'function' ? config.renderFilters(actionsContext) : null}
+      {typeof config.renderFilters === 'function' ? (
+        config.renderFilters(actionsContext)
+      ) : config.filtersUI != null ? (
+        <InlineFiltersUI context={actionsContext} filtersUI={config.filtersUI} />
+      ) : null}
       {config.searchFields && config.searchFields.length > 0 && (
         <SearchInput
           searchFields={config.searchFields}

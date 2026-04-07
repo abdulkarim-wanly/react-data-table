@@ -23,7 +23,12 @@ export type {
 } from './tableTypes';
 export { isModalPayload } from './tableTypes';
 
-export type { InlineFiltersUIProps } from './components/InlineFiltersUI/InlineFiltersUI';
+export type {
+  DataTableFiltersUIBag,
+  DataTableFiltersUISlot,
+  InlineFiltersRenderArgs,
+  InlineFiltersUIProps,
+} from './components/InlineFiltersUI/InlineFiltersUI';
 
 export type { TableAction, ActionButtonsBarProps } from './components/ActionButtonsBar/ActionButtonsBar';
 export { ActionButtonsBar } from './components/ActionButtonsBar/ActionButtonsBar';

@@ -206,8 +206,8 @@ const config: DataTableConfig<Row, Filters> = {
 | `defaultPerPage` | Page size (default `10`) |
 | `searchFields` | Field names merged into `filters` for server search |
 | `pageHeader` | `{ title?, subtitle? }` |
-| `renderFilters` | `(context) => ReactNode` — custom filter UI; use **`context.applyFilters`**, **`context.resetFilters`**, etc. |
-| `filtersUI` | Deprecated; not rendered — use **`renderFilters`** |
+| `filtersUI` | Inline filters slot. Used when **`renderFilters`** is omitted. Passed to **`InlineFiltersUI`**: a function **`(context) => ReactNode`**, or an object with **`render`**, or **`Component`** + **`formConfig`** / **`onApply`**. See below. |
+| `renderFilters` | Optional override for the whole filters region. If set, **`filtersUI`** is not used for that slot. |
 | `onOpenModal` | `(type, props) => void` when actions use **`openModal`** |
 | `onRegisterModal` | Receives a map of modal handler ids |
 | `onUrlAction` | Runs **once** on mount with **`config`** and **`context`** |
@@ -216,9 +216,41 @@ const config: DataTableConfig<Row, Filters> = {
 
 ---
 
-## `DataTableActionsContext` (for actions & `renderFilters`)
+### `filtersUI` shapes (no `renderFilters` needed)
 
-Exposed on toolbar actions, row actions, and **`renderFilters`**:
+1. **Function** — same as a tiny `renderFilters` scoped to the default slot:
+
+   ```tsx
+   filtersUI: (ctx) => <MyFilters onApply={(v) => ctx.applyFilters(v)} />,
+   ```
+
+2. **Object with `render`** — receives `context`, `filters`, `applyFilters`, `resetFilters`:
+
+   ```tsx
+   filtersUI: {
+     render: ({ context }) => <MyFilters onApply={(v) => context.applyFilters(v)} />,
+   },
+   ```
+
+3. **Object with `Component`** — for configs that already expose **`formConfig()`** and **`onApply({ values, context })`**:
+
+   ```tsx
+   filtersUI: {
+     formConfig: () => ({ fields: [...] }),
+     onApply: ({ values, context }) => context.applyFilters(clean(values)),
+     Component: MyFiltersHost, // must render using formConfig / onApply props from the table
+   },
+   ```
+
+   Your **`MyFiltersHost`** receives **`context`**, **`formConfig`**, **`onApply(values)`**, and **`filtersUI`** (the full bag).
+
+If `filtersUI` is an object with only `formConfig` / `onApply` and **no** `render` or `Component`, nothing is rendered until you add one of those.
+
+---
+
+## `DataTableActionsContext` (for actions, `filtersUI`, and `renderFilters`)
+
+Exposed on toolbar actions, row actions, **`filtersUI`**, and **`renderFilters`**:
 
 - **`refetch`**, **`refresh`**, **`isFetching`**
 - **`page`**, **`perPage`**, **`setPage`**, **`setPerPage`**
