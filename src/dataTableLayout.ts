@@ -50,6 +50,26 @@ export interface DataTableClassNames {
   listView: string;
   /** Wrapper around a single list item renderer */
   listItem: string;
+  /** Split layout wrapper for the map view */
+  mapViewRoot: string;
+  /** Left-hand results/sidebar panel in map view */
+  mapSidebar: string;
+  /** Optional title row above map view result cards */
+  mapSidebarHeader: string;
+  /** Scrollable list of map cards */
+  mapSidebarList: string;
+  /** Wrapper around a single map card */
+  mapCard: string;
+  /** Added to the active map card */
+  mapCardActive: string;
+  /** Shell around the interactive map canvas */
+  mapCanvasShell: string;
+  /** Actual map canvas div mounted by Mapbox */
+  mapCanvas: string;
+  /** Empty/error state wrapper used by map view */
+  mapEmptyState: string;
+  /** Class applied to rendered popup content */
+  mapPopup: string;
   pagination: string;
   paginationInfo: string;
   paginationMeta: string;
@@ -86,6 +106,16 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   gridItem: '',
   listView: 'flex flex-col gap-3',
   listItem: '',
+  mapViewRoot: 'grid gap-4 xl:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]',
+  mapSidebar: 'flex min-h-[420px] flex-col rounded-2xl border border-slate-200/70 bg-white/80 p-3 shadow-sm backdrop-blur',
+  mapSidebarHeader: 'mb-3 flex items-center justify-between gap-3 text-sm font-medium text-slate-700',
+  mapSidebarList: 'flex flex-1 flex-col gap-3 overflow-auto pr-1',
+  mapCard: 'rounded-xl border border-slate-200/70 bg-white p-4 shadow-sm transition',
+  mapCardActive: 'border-blue-400 bg-blue-50/70 ring-2 ring-blue-200',
+  mapCanvasShell: 'relative min-h-[420px] overflow-hidden rounded-2xl border border-slate-200/70 bg-slate-100 shadow-sm',
+  mapCanvas: 'h-[640px] w-full',
+  mapEmptyState: 'flex min-h-[240px] items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white/70 p-6 text-center text-sm text-slate-500',
+  mapPopup: 'min-w-[180px]',
   pagination: 'flex items-center justify-between gap-3 text-sm mt-2',
   paginationInfo: '',
   paginationMeta: 'text-muted-foreground',
@@ -107,6 +137,9 @@ export interface DataTableLabels {
   viewAsTable: string;
   viewAsGrid: string;
   viewAsList: string;
+  viewAsMap: string;
+  mapResults: string;
+  mapNoCoordinates: string;
   pageLabel: string;
   ofLabel: string;
   itemsLabel: string;
@@ -127,6 +160,9 @@ export const DEFAULT_DATA_TABLE_LABELS: DataTableLabels = {
   viewAsTable: 'Table',
   viewAsGrid: 'Grid',
   viewAsList: 'List',
+  viewAsMap: 'Map',
+  mapResults: 'Locations',
+  mapNoCoordinates: 'No items with valid map coordinates were found on this page.',
   pageLabel: 'Page',
   ofLabel: 'of',
   itemsLabel: 'items',

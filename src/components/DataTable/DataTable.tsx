@@ -27,9 +27,11 @@ import {
   InlineFiltersUI,
   type DataTableFiltersUISlot,
 } from "../InlineFiltersUI/InlineFiltersUI";
+import { MapView } from "../MapView/MapView";
 import type {
   DataTableActionsContext,
   DataTableColumnDef,
+  DataTableMapViewConfig,
   DataTableViewMode,
   DataTableViewRendererArgs,
   FilterValues,
@@ -104,7 +106,12 @@ function hasObviousActionsColumn<TRecord>(
 }
 
 function isDataTableViewMode(value: unknown): value is DataTableViewMode {
-  return value === "table" || value === "grid" || value === "list";
+  return (
+    value === "table" ||
+    value === "grid" ||
+    value === "list" ||
+    value === "map"
+  );
 }
 
 function getViewModeStorageKey(tableId: string, customKey?: string): string {
@@ -236,6 +243,8 @@ export interface DataTableViewsConfig<
   renderListItem?: (
     args: DataTableViewRendererArgs<TRecord, TFilters>
   ) => React.ReactNode;
+  /** Required if you enable the `map` view mode. */
+  map?: DataTableMapViewConfig<TRecord, TFilters>;
 }
 
 export interface DataTableProps<
@@ -359,6 +368,17 @@ export function DataTable<
       if (
         mode === "list" &&
         typeof config.views?.renderListItem === "function"
+      ) {
+        nextModes.push(mode);
+        return;
+      }
+      if (
+        mode === "map" &&
+        config.views?.map &&
+        typeof config.views.map.getCoordinates === "function" &&
+        typeof config.views.map.renderCard === "function" &&
+        typeof config.views.map.accessToken === "string" &&
+        config.views.map.accessToken.trim() !== ""
       ) {
         nextModes.push(mode);
       }
@@ -690,6 +710,8 @@ export function DataTable<
                 ? labels.viewAsGrid
                 : mode === "list"
                 ? labels.viewAsList
+                : mode === "map"
+                ? labels.viewAsMap
                 : labels.viewAsTable;
             return (
               <Button
@@ -834,6 +856,33 @@ export function DataTable<
   const collectionInner =
     currentViewMode === "table" ? (
       tableInner
+    ) : currentViewMode === "map" && config.views?.map ? (
+      <MapView
+        records={tableData}
+        context={actionsContext}
+        config={config.views.map}
+        classNames={{
+          mapViewRoot: c.mapViewRoot,
+          mapSidebar: c.mapSidebar,
+          mapSidebarHeader: c.mapSidebarHeader,
+          mapSidebarList: c.mapSidebarList,
+          mapCard: c.mapCard,
+          mapCardActive: c.mapCardActive,
+          mapCanvasShell: c.mapCanvasShell,
+          mapCanvas: c.mapCanvas,
+          mapEmptyState: c.mapEmptyState,
+          mapPopup: c.mapPopup,
+        }}
+        labels={{
+          mapResults: labels.mapResults,
+          mapNoCoordinates: labels.mapNoCoordinates,
+          errorLoading: labels.errorLoading,
+        }}
+        isBusy={busy}
+        isError={isError}
+        skeletonRows={skeletonRows}
+        onOpenModal={config.onOpenModal}
+      />
     ) : (
       <div
         className={joinClasses(

@@ -141,15 +141,21 @@ describe('DataTable view modes', () => {
     const html = renderTable({
       ...baseConfig,
       views: {
-        modes: ['table', 'grid', 'list'],
+        modes: ['table', 'grid', 'list', 'map'],
         renderGridItem: ({ record }) => React.createElement('div', null, record.name),
         renderListItem: ({ record }) => React.createElement('div', null, record.name),
+        map: {
+          accessToken: 'test-token',
+          getCoordinates: () => ({ lat: 33.3152, lng: 44.3661 }),
+          renderCard: ({ record }) => React.createElement('div', null, record.name),
+        },
       },
     });
 
     expect(html).toContain('Table');
     expect(html).toContain('Grid');
     expect(html).toContain('List');
+    expect(html).toContain('Map');
   });
 
   test('renders the grid renderer when grid is the default mode', () => {
@@ -198,6 +204,30 @@ describe('DataTable view modes', () => {
 
     expect(html).toContain('<table');
     expect(html).not.toContain('Grid');
+  });
+
+  test('renders the map view layout when map is the default mode', () => {
+    const html = renderTable(
+      {
+        ...baseConfig,
+        views: {
+          modes: ['table', 'map'],
+          defaultMode: 'map',
+          map: {
+            accessToken: 'test-token',
+            sidebarTitle: 'Property locations',
+            getCoordinates: () => ({ lat: 33.3152, lng: 44.3661 }),
+            renderCard: ({ record }) =>
+              React.createElement('article', { 'data-map-card': record.id }, record.name),
+          },
+        },
+      },
+      { prefetchedData }
+    );
+
+    expect(html).toContain('Property locations');
+    expect(html).toContain('data-map-card="1"');
+    expect(html).not.toContain('<table');
   });
 
   test('restores the persisted view mode from localStorage', () => {

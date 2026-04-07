@@ -1,6 +1,6 @@
 # genesis-react-data-table
 
-Configurable **React** data table built on [**TanStack Table**](https://tanstack.com/table) v8 and [**TanStack Query**](https://tanstack.com/query) v5. Includes search, pagination, sorting, toolbar actions, row actions, optional custom filter UI, built-in **table / grid / list** view modes, and **full TypeScript** generics for row and filter types.
+Configurable **React** data table built on [**TanStack Table**](https://tanstack.com/table) v8 and [**TanStack Query**](https://tanstack.com/query) v5. Includes search, pagination, sorting, toolbar actions, row actions, optional custom filter UI, built-in **table / grid / list / map** view modes, and **full TypeScript** generics for row and filter types.
 
 ## Requirements
 
@@ -9,11 +9,12 @@ Configurable **React** data table built on [**TanStack Table**](https://tanstack
 
 | Package | Notes |
 |--------|--------|
-| `react` / `react-dom` | ≥ 18 |
-| `@tanstack/react-query` | v5 — wrap your app in `QueryClientProvider` |
+| `react` / `react-dom` | >= 18 |
+| `@tanstack/react-query` | v5 - wrap your app in `QueryClientProvider` |
 | `@tanstack/react-table` | v8 |
-| `react-i18next` | ≥ 11 (e.g. 15.x is supported) + `i18next` |
-| `lucide-react` | ≥ 0.400 — icons used by the built-in search UI |
+| `react-i18next` | >= 11 (e.g. 15.x is supported) + `i18next` |
+| `lucide-react` | >= 0.400 - icons used by the built-in search UI |
+| `mapbox-gl` | v3 when you use the built-in map view |
 
 ## Installation
 
@@ -49,7 +50,7 @@ npm install git+https://github.com/YOUR_ORG/YOUR_REPO.git
 Then add **peer dependencies** in the same project (npm does not always install peers for git deps):
 
 ```bash
-npm install @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react
+npm install @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react mapbox-gl
 ```
 
 **Note:** The repo is set up so **`dist/`** is not required in Git — the first install runs **`npm run build`** via **`prepare`**. If you prefer faster installs and no build on the consumer machine, you can commit **`dist/`** and remove **`dist/`** from **`.gitignore`** (optional).
@@ -67,7 +68,7 @@ npm install @tanstack/react-query @tanstack/react-table react-i18next i18next lu
 ### From the npm registry (optional)
 
 ```bash
-npm install genesis-react-data-table @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react
+npm install genesis-react-data-table @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react mapbox-gl
 ```
 
 If npm reports peer conflicts, align versions with the table above, or use `npm install --legacy-peer-deps` only as a last resort.
@@ -133,7 +134,7 @@ If you do **not** set `config.searchFields`, you can skip some keys; still provi
 
 The table ships with **plain defaults** (`DEFAULT_DATA_TABLE_CLASSNAMES`). Override only what you need via **`config.classNames`**, or swap whole regions with **`config.layoutComponents`**.
 
-**`config.classNames`** — partial map of regions (root, `headerCard`, `tableOuter`, `tableScroll`, `tableHeadCellSortable`, pagination, skeleton bars, etc.). Import **`DEFAULT_DATA_TABLE_CLASSNAMES`** or **`mergeDataTableClassNames`** if you want to extend defaults in code.
+**`config.classNames`** — partial map of regions (root, `headerCard`, `tableOuter`, `tableScroll`, `tableHeadCellSortable`, pagination, skeleton bars, map shell/cards, etc.). Import **`DEFAULT_DATA_TABLE_CLASSNAMES`** or **`mergeDataTableClassNames`** if you want to extend defaults in code.
 
 **`config.labels`** — strings for error/empty/pagination and built-in view mode labels. Default is English; pass values from **`t('…')`** if you use i18n.
 
@@ -245,6 +246,16 @@ const config: DataTableConfig<Row, Filters> = {
 
 `query.filters` is a **`MergedTableFilters<TFilters>`**: your fields plus optional **`search`** / **`searchFields`** when the built-in search bar is enabled.
 
+### Mapbox CSS
+
+If you use the built-in **map** view, import Mapbox GL CSS once in your app bootstrap:
+
+```ts
+import "mapbox-gl/dist/mapbox-gl.css";
+```
+
+Mapbox GL also requires an access token for tile rendering.
+
 ---
 
 ## `DataTable` config reference
@@ -256,7 +267,8 @@ const config: DataTableConfig<Row, Filters> = {
 | `rowActions` | **`RowAction<TRecord, TFilters>[]`** rendered by `DataTable` as a built-in trailing actions column when an actions column is not already present |
 | `autoRowActionsColumn` | Defaults to `true`; set `false` if you already render row actions in your own table column |
 | `actions` | **`TableAction<TRecord, TFilters>[]`** for toolbar buttons |
-| `views` | Optional built-in view mode config for `table`, `grid`, and `list` |
+| `views` | Optional built-in view mode config for `table`, `grid`, `list`, and `map` |
+| `views.map` | Map mode config: access token, coordinates extractor, sidebar card renderer, and optional popup/map options |
 | `id` | Stable table id (default `"table"`); used in modal registry keys |
 | `queryKey` | Extra React Query key prefix; defaults to `[id]` |
 | `defaultPerPage` | Page size (default `10`) |
@@ -356,13 +368,14 @@ Exposed on toolbar actions, row actions, **`filtersUI`**, and **`renderFilters`*
 
 ## View modes
 
-`DataTable` supports three built-in display modes:
+`DataTable` supports four built-in display modes:
 
 - **`table`** — the default column-based layout
 - **`grid`** — card/grid layout driven by your `renderGridItem`
 - **`list`** — stacked list layout driven by your `renderListItem`
+- **`map`** — split layout with a results sidebar and interactive Mapbox map
 
-Grid and list are intentionally renderer-driven because the library cannot safely guess how your record should appear outside the tabular column model.
+Grid, list, and map are intentionally renderer-driven because the library cannot safely guess how your record should appear outside the tabular column model.
 
 ```tsx
 import { DataTable, type DataTableConfig } from "genesis-react-data-table";
@@ -381,7 +394,7 @@ const config: DataTableConfig<Row> = {
     { accessorKey: "email", header: "Email" },
   ],
   views: {
-    modes: ["table", "grid", "list"],
+    modes: ["table", "grid", "list", "map"],
     defaultMode: "table",
     persistMode: true,
     renderGridItem: ({ record }) => (
@@ -396,6 +409,16 @@ const config: DataTableConfig<Row> = {
         <span className="text-sm text-muted-foreground">{record.email}</span>
       </div>
     ),
+    map: {
+      accessToken: import.meta.env.VITE_MAPBOX_TOKEN,
+      getCoordinates: (record) => ({ lat: record.lat, lng: record.lng }),
+      renderCard: ({ record, isActive }) => (
+        <article className={isActive ? "rounded-xl border border-blue-400 p-4" : "rounded-xl border p-4"}>
+          <h3 className="font-semibold">{record.name}</h3>
+          <p className="text-sm text-muted-foreground">{record.email}</p>
+        </article>
+      ),
+    },
   },
 };
 ```
@@ -404,10 +427,47 @@ Notes:
 
 - Include `grid` in `views.modes` only when `renderGridItem` is provided.
 - Include `list` in `views.modes` only when `renderListItem` is provided.
+- Include `map` in `views.modes` only when `views.map` includes `accessToken`, `getCoordinates`, and `renderCard`.
 - The built-in toggle appears automatically when more than one valid mode is available.
 - The user's last chosen view mode is persisted in `localStorage` by default using the table id.
 - Disable persistence with `views.persistMode = false`, or override the storage key with `views.storageKey`.
-- Customize toggle labels through `config.labels.viewAsTable`, `config.labels.viewAsGrid`, and `config.labels.viewAsList`.
+- Customize toggle labels through `config.labels.viewAsTable`, `config.labels.viewAsGrid`, `config.labels.viewAsList`, and `config.labels.viewAsMap`.
+
+### Map view details
+
+The built-in map view renders a two-panel layout:
+
+- left: scrollable result cards from `views.map.renderCard`
+- right: interactive Mapbox GL map with markers for rows that return valid coordinates
+
+Use `views.map` to control it:
+
+```tsx
+views: {
+  modes: ["table", "map"],
+  map: {
+    accessToken: import.meta.env.VITE_MAPBOX_TOKEN,
+    getCoordinates: (record) => ({ lat: record.lat, lng: record.lng }),
+    renderCard: ({ record, isActive, select }) => (
+      <button type="button" onClick={select} className={isActive ? "border-blue-500" : ""}>
+        {record.name}
+      </button>
+    ),
+    renderPopup: ({ record }) => <div>{record.name}</div>,
+    sidebarTitle: "Property locations",
+    mapStyle: "mapbox://styles/mapbox/standard",
+    initialZoom: 10,
+    fitBoundsPadding: 72,
+    showNavigation: true,
+  },
+}
+```
+
+Notes:
+
+- rows without valid `lat/lng` are skipped from marker rendering
+- card selection and marker selection stay in sync
+- the map view persists like the other view modes when `persistMode !== false`
 
 ---
 
@@ -436,7 +496,7 @@ Wire **`onOpenModal`** on **`DataTable`** if actions return **`openModal`** payl
 
 **Registration:** `setDefaultDataTableFiltersHost` from **`genesis-react-data-table`** or **`genesis-react-data-table/setup`** — see **`filtersUI`** and **Vite** sections above.
 
-**Types:** `DataTableConfig`, `DataTableProps`, `DataTableViewsConfig`, `DataTableActionsContext`, `DataTableColumnDef`, `DataTableFiltersUIHostProps`, `DataTableFiltersUISlot`, `DataTableViewMode`, `DataTableViewRendererArgs`, `ServiceQuery`, `ServiceResult`, …
+**Types:** `DataTableConfig`, `DataTableProps`, `DataTableViewsConfig`, `DataTableActionsContext`, `DataTableColumnDef`, `DataTableFiltersUIHostProps`, `DataTableFiltersUISlot`, `DataTableViewMode`, `DataTableViewRendererArgs`, `DataTableMapCoordinates`, `DataTableMapItemRenderArgs`, `DataTableMapViewConfig`, `ServiceQuery`, `ServiceResult`, …
 
 **Util:** `isModalPayload` (for custom modal flows).
 
@@ -488,3 +548,5 @@ npm test
 ## License
 
 MIT — see `LICENSE`.
+
+

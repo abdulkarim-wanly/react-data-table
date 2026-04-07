@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction, ComponentType } from 'react';
+import type { Dispatch, SetStateAction, ComponentType, ReactNode } from 'react';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import type { QueryObserverResult, RefetchOptions } from '@tanstack/react-query';
 
@@ -74,7 +74,7 @@ export type OpenModalCallbackProps = Record<string, unknown>;
 
 export type OpenModalCallback = (type: string, props: OpenModalCallbackProps) => void;
 
-export type DataTableViewMode = 'table' | 'grid' | 'list';
+export type DataTableViewMode = 'table' | 'grid' | 'list' | 'map';
 
 export type DataTableRefetch<TRecord> = (
   options?: RefetchOptions
@@ -121,6 +121,33 @@ export interface DataTableViewRendererArgs<TRecord, TFilters extends FilterValue
   index: number;
   context: DataTableActionsContext<TRecord, TFilters>;
   onOpenModal?: OpenModalCallback;
+}
+
+export interface DataTableMapCoordinates {
+  lat: number;
+  lng: number;
+}
+
+export interface DataTableMapItemRenderArgs<TRecord, TFilters extends FilterValues = FilterValues>
+  extends DataTableViewRendererArgs<TRecord, TFilters> {
+  coordinates: DataTableMapCoordinates;
+  isActive: boolean;
+  select: () => void;
+}
+
+export interface DataTableMapViewConfig<TRecord, TFilters extends FilterValues = FilterValues> {
+  accessToken: string;
+  getCoordinates: (record: TRecord) => DataTableMapCoordinates | null | undefined;
+  renderCard: (args: DataTableMapItemRenderArgs<TRecord, TFilters>) => ReactNode;
+  renderPopup?: (args: DataTableMapItemRenderArgs<TRecord, TFilters>) => ReactNode;
+  sidebarTitle?: ReactNode;
+  mapStyle?: string;
+  initialCenter?: [number, number];
+  initialZoom?: number;
+  fitBoundsPadding?: number;
+  minZoom?: number;
+  maxZoom?: number;
+  showNavigation?: boolean;
 }
 
 export type ModalRegistryArgs<TRecord, TFilters extends FilterValues = FilterValues> =

@@ -8,6 +8,9 @@ export { DataTable } from './components/DataTable/DataTable';
 export type {
   DataTableActionsContext,
   DataTableColumnDef,
+  DataTableMapCoordinates,
+  DataTableMapItemRenderArgs,
+  DataTableMapViewConfig,
   DataTableQueryMeta,
   DataTableSearchFilterKeys,
   DataTableViewMode,

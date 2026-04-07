@@ -22,6 +22,7 @@ describe('public helpers', () => {
   test('mergeDataTableLabels keeps the default actions column label and allows override', () => {
     expect(DEFAULT_DATA_TABLE_LABELS.actionsColumn).toBe('Actions');
     expect(DEFAULT_DATA_TABLE_LABELS.viewAsGrid).toBe('Grid');
+    expect(DEFAULT_DATA_TABLE_LABELS.viewAsMap).toBe('Map');
     expect(mergeDataTableLabels({}).actionsColumn).toBe('Actions');
     expect(mergeDataTableLabels({ actionsColumn: 'Ops' }).actionsColumn).toBe('Ops');
     expect(mergeDataTableLabels({ viewAsList: 'Rows' }).viewAsList).toBe('Rows');
