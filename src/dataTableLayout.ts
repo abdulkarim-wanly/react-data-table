@@ -81,6 +81,8 @@ export function mergeDataTableClassNames(
 export interface DataTableLabels {
   errorLoading: string;
   noResults: string;
+  /** Header text for the built-in row actions column. */
+  actionsColumn: string;
   pageLabel: string;
   ofLabel: string;
   itemsLabel: string;
@@ -97,6 +99,7 @@ export interface DataTableLabels {
 export const DEFAULT_DATA_TABLE_LABELS: DataTableLabels = {
   errorLoading: 'Error loading data',
   noResults: 'No results',
+  actionsColumn: 'Actions',
   pageLabel: 'Page',
   ofLabel: 'of',
   itemsLabel: 'items',

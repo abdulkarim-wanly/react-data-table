@@ -52,7 +52,8 @@
   "scripts": {
     "build": "rollup -c",
     "prepare": "npm run build",
-    "test": "jest --passWithNoTests",
+    "pretest": "npm run build",
+    "test": "jest --runInBand",
     "prepublishOnly": "npm run build"
   }
 }

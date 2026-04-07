@@ -68,10 +68,6 @@ export interface DataTableConfig<TRecord, TFilters extends FilterValues = Filter
    * `InlineFiltersUI` branch (ignores `filtersUI` for that slot).
    */
   renderFilters?: (context: DataTableActionsContext<TRecord, TFilters>) => React.ReactNode;
-  recordById?: {
-    endpoint: string | ((id: string | number) => string);
-    map?: (response: unknown) => TRecord;
-  };
   searchFields?: string[];
   pageHeader?: {
     title?: React.ReactNode;
@@ -296,9 +292,10 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   }, [meta?.hasNext, totalPages, page, rowCount, effectivePerPage]);
 
   const showPagination = data !== undefined && !isError;
+  const labels = React.useMemo(() => mergeDataTableLabels(config.labels), [config.labels]);
 
   const columns = React.useMemo((): ColumnDef<TRecord>[] => {
-    return (config.columns || []).map((col) => {
+    const normalizedColumns = (config.columns || []).map((col) => {
       const { sortable, ...rest } = col;
       const colCopy: ColumnDef<TRecord> = { ...rest };
       if (sortable === false) {
@@ -309,7 +306,26 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
       }
       return colCopy;
     });
-  }, [config.columns]);
+    if (!config.rowActions || config.rowActions.length === 0) {
+      return normalizedColumns;
+    }
+    return [
+      ...normalizedColumns,
+      {
+        id: `${tableId}__rowActions`,
+        header: labels.actionsColumn,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <UserActionCell
+            record={row.original}
+            rowActions={config.rowActions!}
+            context={actionsContext}
+            onOpenModal={config.onOpenModal}
+          />
+        ),
+      } satisfies ColumnDef<TRecord>,
+    ];
+  }, [config.columns, config.rowActions, tableId, labels.actionsColumn, actionsContext, config.onOpenModal]);
 
   const table = useReactTable({
     data: tableData,
@@ -331,7 +347,6 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   const busy = isLoading || isFetching;
 
   const c = React.useMemo(() => mergeDataTableClassNames(config.classNames), [config.classNames]);
-  const labels = React.useMemo(() => mergeDataTableLabels(config.labels), [config.labels]);
   const LC = config.layoutComponents;
 
   const paginationSummary = React.useMemo(() => {

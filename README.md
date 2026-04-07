@@ -253,7 +253,7 @@ const config: DataTableConfig<Row, Filters> = {
 |----------|-------------|
 | `service.getAll` | **Required.** `(query: ServiceQuery<TFilters>) => Promise<ServiceResult<TRecord>>` |
 | `columns` | TanStack **`ColumnDef<TRecord>[]`**; you may use **`sortable?: boolean`** (alias for `enableSorting`) |
-| `rowActions` | **`RowAction<TRecord, TFilters>[]`** for per-row menus/buttons |
+| `rowActions` | **`RowAction<TRecord, TFilters>[]`** rendered by `DataTable` as a built-in trailing actions column |
 | `actions` | **`TableAction<TRecord, TFilters>[]`** for toolbar buttons |
 | `id` | Stable table id (default `"table"`); used in modal registry keys |
 | `queryKey` | Extra React Query key prefix; defaults to `[id]` |
@@ -352,6 +352,8 @@ Exposed on toolbar actions, row actions, **`filtersUI`**, and **`renderFilters`*
 ---
 
 ## Row actions and `UserActionCell`
+
+When you pass **`config.rowActions`**, `DataTable` appends a built-in trailing **Actions** column automatically. Override the header text with **`config.labels?.actionsColumn`**.
 
 Use **`UserActionCell`** inside a column cell when you need the same row actions as **`config.rowActions`**:
 
