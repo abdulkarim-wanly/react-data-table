@@ -253,7 +253,7 @@ const config: DataTableConfig<Row, Filters> = {
 |----------|-------------|
 | `service.getAll` | **Required.** `(query: ServiceQuery<TFilters>) => Promise<ServiceResult<TRecord>>` |
 | `columns` | TanStack **`ColumnDef<TRecord>[]`**; you may use **`sortable?: boolean`** (alias for `enableSorting`) |
-| `rowActions` | **`RowAction<TRecord, TFilters>[]`** rendered by `DataTable` as a built-in trailing actions column |
+| `rowActions` | **`RowAction<TRecord, TFilters>[]`** rendered by `DataTable` as a built-in trailing actions column when an actions column is not already present |
 | `autoRowActionsColumn` | Defaults to `true`; set `false` if you already render row actions in your own table column |
 | `actions` | **`TableAction<TRecord, TFilters>[]`** for toolbar buttons |
 | `views` | Optional built-in view mode config for `table`, `grid`, and `list` |
@@ -413,7 +413,7 @@ Notes:
 
 ## Row actions and `UserActionCell`
 
-When you pass **`config.rowActions`**, `DataTable` appends a built-in trailing **Actions** column automatically. Override the header text with **`config.labels?.actionsColumn`**.
+When you pass **`config.rowActions`**, `DataTable` appends a built-in trailing **Actions** column automatically when your `columns` array does not already contain an obvious actions column. Override the header text with **`config.labels?.actionsColumn`**.
 
 If your existing table already renders actions through a custom column cell, set **`config.autoRowActionsColumn = false`** to avoid duplicate **Actions** columns in table view.
 

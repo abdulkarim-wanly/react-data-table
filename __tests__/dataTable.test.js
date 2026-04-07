@@ -44,6 +44,10 @@ function renderTable(config, options = {}) {
   return html;
 }
 
+function countOccurrences(text, token) {
+  return text.split(token).length - 1;
+}
+
 describe('DataTable rowActions', () => {
   const baseConfig = {
     service: {
@@ -92,6 +96,28 @@ describe('DataTable rowActions', () => {
 
     expect(html).toContain('Name');
     expect(html).not.toContain('Actions');
+  });
+
+  test('does not append a second actions column when one already exists in config.columns', () => {
+    const html = renderTable(
+      {
+        ...baseConfig,
+        columns: [
+          { accessorKey: 'name', header: 'Name' },
+          { id: 'actions', header: 'Actions', cell: () => React.createElement('span', null, 'Manual actions') },
+        ],
+        rowActions: [{ id: 'view', label: 'View', onClick: async () => {} }],
+      },
+      {
+        prefetchedData: {
+          data: [{ id: '1', name: 'Alice' }],
+          meta: { total: 1, page: 1, perPage: 10 },
+        },
+      }
+    );
+
+    expect(countOccurrences(html, '>Actions<')).toBe(1);
+    expect(html).toContain('Manual actions');
   });
 });
 

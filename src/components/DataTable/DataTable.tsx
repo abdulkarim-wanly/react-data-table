@@ -1,19 +1,32 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ColumnDef,
   getCoreRowModel,
   useReactTable,
   SortingState,
   flexRender,
-} from '@tanstack/react-table';
+} from "@tanstack/react-table";
 
-import { Button } from '../ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { SearchInput } from '../SearchInput/SearchInput';
-import { UserActionCell, RowAction } from '../UserActionCell/UserActionCell';
-import { ActionButtonsBar, TableAction } from '../ActionButtonsBar/ActionButtonsBar';
-import { InlineFiltersUI, type DataTableFiltersUISlot } from '../InlineFiltersUI/InlineFiltersUI';
+import { Button } from "../ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../ui/table";
+import { SearchInput } from "../SearchInput/SearchInput";
+import { UserActionCell, RowAction } from "../UserActionCell/UserActionCell";
+import {
+  ActionButtonsBar,
+  TableAction,
+} from "../ActionButtonsBar/ActionButtonsBar";
+import {
+  InlineFiltersUI,
+  type DataTableFiltersUISlot,
+} from "../InlineFiltersUI/InlineFiltersUI";
 import type {
   DataTableActionsContext,
   DataTableColumnDef,
@@ -25,28 +38,73 @@ import type {
   OpenModalCallback,
   ServiceQuery,
   ServiceResult,
-} from '../../tableTypes';
-import { isModalPayload } from '../../tableTypes';
+} from "../../tableTypes";
+import { isModalPayload } from "../../tableTypes";
 import {
   mergeDataTableClassNames,
   mergeDataTableLabels,
   type DataTableClassNames,
   type DataTableLabels,
   type DataTableLayoutComponents,
-} from '../../dataTableLayout';
+} from "../../dataTableLayout";
 
-export type { ServiceQuery, ServiceResult } from '../../tableTypes';
+export type { ServiceQuery, ServiceResult } from "../../tableTypes";
 
 function joinClasses(...parts: (string | undefined | false)[]): string {
-  return parts.filter(Boolean).join(' ').trim();
+  return parts.filter(Boolean).join(" ").trim();
 }
 
-function formatLabel(template: string, vars: Record<string, string | number>): string {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => String(vars[key] ?? ''));
+function formatLabel(
+  template: string,
+  vars: Record<string, string | number>
+): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) =>
+    String(vars[key] ?? "")
+  );
+}
+
+function normalizeToken(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function getColumnHeaderText<TRecord>(
+  column: ColumnDef<TRecord>
+): string | null {
+  const header = column.header;
+  if (typeof header === "string" || typeof header === "number") {
+    return String(header);
+  }
+  return null;
+}
+
+function hasObviousActionsColumn<TRecord>(
+  columns: ColumnDef<TRecord>[],
+  actionsLabel: string
+): boolean {
+  const labelToken = normalizeToken(actionsLabel);
+  return columns.some((column) => {
+    const id = typeof column.id === "string" ? normalizeToken(column.id) : null;
+    const accessorKey =
+      "accessorKey" in column && typeof column.accessorKey === "string"
+        ? normalizeToken(column.accessorKey)
+        : null;
+    const headerText = getColumnHeaderText(column);
+    const headerToken = headerText ? normalizeToken(headerText) : null;
+
+    return (
+      id === "action" ||
+      id === "actions" ||
+      accessorKey === "action" ||
+      accessorKey === "actions" ||
+      headerToken === "action" ||
+      headerToken === "actions" ||
+      headerToken === labelToken
+    );
+  });
 }
 
 function isDataTableViewMode(value: unknown): value is DataTableViewMode {
-  return value === 'table' || value === 'grid' || value === 'list';
+  return value === "table" || value === "grid" || value === "list";
 }
 
 function getViewModeStorageKey(tableId: string, customKey?: string): string {
@@ -55,13 +113,22 @@ function getViewModeStorageKey(tableId: string, customKey?: string): string {
 
 function readPersistedViewMode(
   tableId: string,
-  views?: Pick<DataTableViewsConfig<never, FilterValues>, 'persistMode' | 'storageKey'>
+  views?: Pick<
+    DataTableViewsConfig<never, FilterValues>,
+    "persistMode" | "storageKey"
+  >
 ): DataTableViewMode | null {
-  if (views?.persistMode === false || typeof globalThis === 'undefined' || !('localStorage' in globalThis)) {
+  if (
+    views?.persistMode === false ||
+    typeof globalThis === "undefined" ||
+    !("localStorage" in globalThis)
+  ) {
     return null;
   }
   try {
-    const stored = globalThis.localStorage?.getItem(getViewModeStorageKey(tableId, views?.storageKey));
+    const stored = globalThis.localStorage?.getItem(
+      getViewModeStorageKey(tableId, views?.storageKey)
+    );
     return isDataTableViewMode(stored) ? stored : null;
   } catch {
     return null;
@@ -74,7 +141,10 @@ function readPersistedViewMode(
 //
 // Use two type parameters so row data and filter shape flow through the table:
 // `DataTableConfig<UserRow, UserFilters>` — filters should use optional fields.
-export interface DataTableConfig<TRecord, TFilters extends FilterValues = FilterValues> {
+export interface DataTableConfig<
+  TRecord,
+  TFilters extends FilterValues = FilterValues
+> {
   id?: string;
   queryKey?: unknown[];
   service: {
@@ -96,7 +166,9 @@ export interface DataTableConfig<TRecord, TFilters extends FilterValues = Filter
    * Optional override for the filters region. When set, it replaces the default
    * `InlineFiltersUI` branch (ignores `filtersUI` for that slot).
    */
-  renderFilters?: (context: DataTableActionsContext<TRecord, TFilters>) => React.ReactNode;
+  renderFilters?: (
+    context: DataTableActionsContext<TRecord, TFilters>
+  ) => React.ReactNode;
   searchFields?: string[];
   pageHeader?: {
     title?: React.ReactNode;
@@ -111,7 +183,9 @@ export interface DataTableConfig<TRecord, TFilters extends FilterValues = Filter
    * function to integrate your application’s modal system. The keys are of
    * the form `action:<id>` or `rowAction:<id>`.
    */
-  onRegisterModal?: (registry: Record<string, ModalRegistryHandler<TRecord, TFilters>>) => void;
+  onRegisterModal?: (
+    registry: Record<string, ModalRegistryHandler<TRecord, TFilters>>
+  ) => void;
   /**
    * Callback used to open a modal. When row or table actions return a payload
    * with `type` and `props`, this function is invoked with those values.
@@ -139,7 +213,10 @@ export interface DataTableConfig<TRecord, TFilters extends FilterValues = Filter
   layoutComponents?: DataTableLayoutComponents;
 }
 
-export interface DataTableViewsConfig<TRecord, TFilters extends FilterValues = FilterValues> {
+export interface DataTableViewsConfig<
+  TRecord,
+  TFilters extends FilterValues = FilterValues
+> {
   /**
    * Enabled built-in view modes. `table` remains the fallback when this list is empty
    * or when a requested custom renderer is missing.
@@ -152,12 +229,19 @@ export interface DataTableViewsConfig<TRecord, TFilters extends FilterValues = F
   /** Override the localStorage key used when `persistMode` is enabled. */
   storageKey?: string;
   /** Required if you enable the `grid` view mode. */
-  renderGridItem?: (args: DataTableViewRendererArgs<TRecord, TFilters>) => React.ReactNode;
+  renderGridItem?: (
+    args: DataTableViewRendererArgs<TRecord, TFilters>
+  ) => React.ReactNode;
   /** Required if you enable the `list` view mode. */
-  renderListItem?: (args: DataTableViewRendererArgs<TRecord, TFilters>) => React.ReactNode;
+  renderListItem?: (
+    args: DataTableViewRendererArgs<TRecord, TFilters>
+  ) => React.ReactNode;
 }
 
-export interface DataTableProps<TRecord, TFilters extends FilterValues = FilterValues> {
+export interface DataTableProps<
+  TRecord,
+  TFilters extends FilterValues = FilterValues
+> {
   config: DataTableConfig<TRecord, TFilters>;
 }
 
@@ -182,20 +266,24 @@ export interface DataTableProps<TRecord, TFilters extends FilterValues = FilterV
  * />
  * ```
  */
-export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>({
-  config,
-}: DataTableProps<TRecord, TFilters>) {
-  const tableId = config.id || 'table';
+export function DataTable<
+  TRecord,
+  TFilters extends FilterValues = FilterValues
+>({ config }: DataTableProps<TRecord, TFilters>) {
+  const tableId = config.id || "table";
   const [page, setPage] = React.useState(1);
   const [perPage, setPerPage] = React.useState(config.defaultPerPage ?? 10);
   const [viewMode, setViewMode] = React.useState<DataTableViewMode>(
-    () => readPersistedViewMode(tableId, config.views) ?? config.views?.defaultMode ?? 'table'
+    () =>
+      readPersistedViewMode(tableId, config.views) ??
+      config.views?.defaultMode ??
+      "table"
   );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [filters, setFilters] = React.useState<MergedTableFilters<TFilters>>(
-    () => ({}) as MergedTableFilters<TFilters>
+    () => ({} as MergedTableFilters<TFilters>)
   );
-  const [searchValue, setSearchValue] = React.useState('');
+  const [searchValue, setSearchValue] = React.useState("");
 
   React.useEffect(() => {
     const next = config.defaultPerPage ?? 10;
@@ -232,12 +320,15 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
 
   const queryFn = React.useCallback(() => {
     if (!config.service?.getAll) {
-      throw new Error('DataTable requires config.service.getAll(query)');
+      throw new Error("DataTable requires config.service.getAll(query)");
     }
     return config.service.getAll({ ...serviceQuery });
   }, [config.service, serviceQuery]);
 
-  const { data, isLoading, isError, refetch, isFetching } = useQuery<ServiceResult<TRecord>, Error>({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery<
+    ServiceResult<TRecord>,
+    Error
+  >({
     queryKey,
     queryFn,
     placeholderData: (prev) => prev,
@@ -248,25 +339,37 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
 
   const tableData = data?.data ?? [];
   const availableViewModes = React.useMemo(() => {
-    const requested: DataTableViewMode[] = config.views?.modes?.length ? config.views.modes : ['table'];
+    const requested: DataTableViewMode[] = config.views?.modes?.length
+      ? config.views.modes
+      : ["table"];
     const nextModes: DataTableViewMode[] = [];
     requested.forEach((mode) => {
       if (nextModes.includes(mode)) return;
-      if (mode === 'table') {
+      if (mode === "table") {
         nextModes.push(mode);
         return;
       }
-      if (mode === 'grid' && typeof config.views?.renderGridItem === 'function') {
+      if (
+        mode === "grid" &&
+        typeof config.views?.renderGridItem === "function"
+      ) {
         nextModes.push(mode);
         return;
       }
-      if (mode === 'list' && typeof config.views?.renderListItem === 'function') {
+      if (
+        mode === "list" &&
+        typeof config.views?.renderListItem === "function"
+      ) {
         nextModes.push(mode);
       }
     });
-    return nextModes.length > 0 ? nextModes : (['table'] as DataTableViewMode[]);
+    return nextModes.length > 0
+      ? nextModes
+      : (["table"] as DataTableViewMode[]);
   }, [config.views]);
-  const currentViewMode = availableViewModes.includes(viewMode) ? viewMode : availableViewModes[0];
+  const currentViewMode = availableViewModes.includes(viewMode)
+    ? viewMode
+    : availableViewModes[0];
 
   React.useEffect(() => {
     if (availableViewModes.includes(viewMode)) return;
@@ -274,7 +377,11 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   }, [availableViewModes, viewMode]);
 
   React.useEffect(() => {
-    if (config.views?.persistMode === false || typeof globalThis === 'undefined' || !('localStorage' in globalThis)) {
+    if (
+      config.views?.persistMode === false ||
+      typeof globalThis === "undefined" ||
+      !("localStorage" in globalThis)
+    ) {
       return;
     }
     try {
@@ -285,9 +392,16 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
     } catch {
       // Ignore storage write failures so rendering is never blocked by browser policy.
     }
-  }, [config.views?.persistMode, config.views?.storageKey, tableId, currentViewMode]);
+  }, [
+    config.views?.persistMode,
+    config.views?.storageKey,
+    tableId,
+    currentViewMode,
+  ]);
 
-  const actionsContext = React.useMemo<DataTableActionsContext<TRecord, TFilters>>(() => {
+  const actionsContext = React.useMemo<
+    DataTableActionsContext<TRecord, TFilters>
+  >(() => {
     return {
       refetch,
       isFetching,
@@ -310,12 +424,22 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
       },
       resetFilters: () => {
         setFilters({} as MergedTableFilters<TFilters>);
-        setSearchValue('');
+        setSearchValue("");
         setPage(1);
       },
       refresh: () => refetch(),
     };
-  }, [refetch, isFetching, page, perPage, currentViewMode, sorting, filters, tableData, data?.meta]);
+  }, [
+    refetch,
+    isFetching,
+    page,
+    perPage,
+    currentViewMode,
+    sorting,
+    filters,
+    tableData,
+    data?.meta,
+  ]);
 
   const registryMap = React.useMemo(() => {
     const map: Record<string, ModalRegistryHandler<TRecord, TFilters>> = {};
@@ -325,7 +449,10 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
         map[`${tableId}:action:${a.id}`] = async ({ context }) => {
           const payload = await Promise.resolve(openModal({ context }));
           if (isModalPayload(payload) && config.onOpenModal) {
-            config.onOpenModal(payload.type, { ...(payload.props ?? {}), context });
+            config.onOpenModal(payload.type, {
+              ...(payload.props ?? {}),
+              context,
+            });
           }
         };
       }
@@ -334,11 +461,15 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
       if (a?.openModal) {
         const openModal = a.openModal;
         map[`${tableId}:rowAction:${a.id}`] = async (args) => {
-          if (!('record' in args)) return;
+          if (!("record" in args)) return;
           const { context, record } = args;
           const payload = await Promise.resolve(openModal({ record, context }));
           if (isModalPayload(payload) && config.onOpenModal) {
-            config.onOpenModal(payload.type, { ...(payload.props ?? {}), context, record });
+            config.onOpenModal(payload.type, {
+              ...(payload.props ?? {}),
+              context,
+              record,
+            });
           }
         };
       }
@@ -374,7 +505,8 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   }, [totalPages]);
 
   const rowCount = tableData.length;
-  const canGoPrev = meta?.hasPrevious !== undefined ? meta.hasPrevious : page > 1;
+  const canGoPrev =
+    meta?.hasPrevious !== undefined ? meta.hasPrevious : page > 1;
   const canGoNext = React.useMemo(() => {
     if (meta?.hasNext !== undefined) return meta.hasNext;
     if (totalPages != null) return page < totalPages;
@@ -383,7 +515,10 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   }, [meta?.hasNext, totalPages, page, rowCount, effectivePerPage]);
 
   const showPagination = data !== undefined && !isError;
-  const labels = React.useMemo(() => mergeDataTableLabels(config.labels), [config.labels]);
+  const labels = React.useMemo(
+    () => mergeDataTableLabels(config.labels),
+    [config.labels]
+  );
 
   const columns = React.useMemo((): ColumnDef<TRecord>[] => {
     const normalizedColumns = (config.columns || []).map((col) => {
@@ -397,7 +532,12 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
       }
       return colCopy;
     });
-    if (!config.rowActions || config.rowActions.length === 0 || config.autoRowActionsColumn === false) {
+    if (
+      !config.rowActions ||
+      config.rowActions.length === 0 ||
+      config.autoRowActionsColumn === false ||
+      hasObviousActionsColumn(normalizedColumns, labels.actionsColumn)
+    ) {
       return normalizedColumns;
     }
     return [
@@ -445,7 +585,10 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   const colsCount = columns.length;
   const busy = isLoading || isFetching;
 
-  const c = React.useMemo(() => mergeDataTableClassNames(config.classNames), [config.classNames]);
+  const c = React.useMemo(
+    () => mergeDataTableClassNames(config.classNames),
+    [config.classNames]
+  );
   const LC = config.layoutComponents;
 
   const paginationSummary = React.useMemo(() => {
@@ -453,12 +596,18 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
       if (totalCount === 0) return labels.emptyDataset;
       const start = (page - 1) * effectivePerPage + 1;
       const end = Math.min(page * effectivePerPage, totalCount);
-      return formatLabel(labels.showingRange, { start, end, total: totalCount });
+      return formatLabel(labels.showingRange, {
+        start,
+        end,
+        total: totalCount,
+      });
     }
     return formatLabel(labels.rowsThisPage, { count: rowCount });
   }, [totalCount, page, effectivePerPage, rowCount, labels]);
 
-  const hasHeaderBlock = Boolean(config.pageHeader || (config.actions && config.actions.length > 0));
+  const hasHeaderBlock = Boolean(
+    config.pageHeader || (config.actions && config.actions.length > 0)
+  );
   const actionsBar =
     config.actions && config.actions.length > 0 ? (
       <ActionButtonsBar
@@ -467,14 +616,24 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
         onOpenModal={config.onOpenModal}
       />
     ) : null;
-  const actionsWrapped = actionsBar ? <div className={joinClasses(c.actionsWrapper)}>{actionsBar}</div> : null;
+  const actionsWrapped = actionsBar ? (
+    <div className={joinClasses(c.actionsWrapper)}>{actionsBar}</div>
+  ) : null;
 
   const defaultHeaderInner = (
     <>
       {config.pageHeader && (
         <div className={joinClasses(c.pageHeaderWrapper)}>
-          {config.pageHeader.title && <h2 className={joinClasses(c.pageTitle)}>{config.pageHeader.title}</h2>}
-          {config.pageHeader.subtitle && <p className={joinClasses(c.pageSubtitle)}>{config.pageHeader.subtitle}</p>}
+          {config.pageHeader.title && (
+            <h2 className={joinClasses(c.pageTitle)}>
+              {config.pageHeader.title}
+            </h2>
+          )}
+          {config.pageHeader.subtitle && (
+            <p className={joinClasses(c.pageSubtitle)}>
+              {config.pageHeader.subtitle}
+            </p>
+          )}
         </div>
       )}
       {actionsWrapped}
@@ -501,7 +660,7 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
     ));
 
   const filtersEl =
-    typeof config.renderFilters === 'function' ? (
+    typeof config.renderFilters === "function" ? (
       config.renderFilters(actionsContext)
     ) : config.filtersUI != null ? (
       <InlineFiltersUI context={actionsContext} filtersUI={config.filtersUI} />
@@ -527,11 +686,11 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
         <div className={joinClasses(c.viewModeToggle)}>
           {availableViewModes.map((mode) => {
             const label =
-              mode === 'grid'
+              mode === "grid"
                 ? labels.viewAsGrid
-                : mode === 'list'
-                  ? labels.viewAsList
-                  : labels.viewAsTable;
+                : mode === "list"
+                ? labels.viewAsList
+                : labels.viewAsTable;
             return (
               <Button
                 key={mode}
@@ -539,7 +698,7 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
                 variant="outline"
                 className={joinClasses(
                   c.viewModeButton,
-                  currentViewMode === mode ? c.viewModeButtonActive : ''
+                  currentViewMode === mode ? c.viewModeButtonActive : ""
                 )}
                 aria-pressed={currentViewMode === mode}
                 onClick={() => setViewMode(mode)}
@@ -556,7 +715,9 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   const toolbarSection =
     (filtersEl || searchEl || availableViewModes.length > 1) &&
     (LC?.Toolbar ? (
-      <LC.Toolbar classNames={{ filtersAndSearchRow: c.filtersAndSearchRow }}>{toolbarInner}</LC.Toolbar>
+      <LC.Toolbar classNames={{ filtersAndSearchRow: c.filtersAndSearchRow }}>
+        {toolbarInner}
+      </LC.Toolbar>
     ) : (
       <div className={joinClasses(c.filtersAndSearchRow)}>{toolbarInner}</div>
     ));
@@ -572,13 +733,29 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
                 return (
                   <TableHead
                     key={header.id}
-                    className={joinClasses(c.tableHeadCell, canSort ? c.tableHeadCellSortable : '')}
-                    onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                    className={joinClasses(
+                      c.tableHeadCell,
+                      canSort ? c.tableHeadCellSortable : ""
+                    )}
+                    onClick={
+                      canSort
+                        ? header.column.getToggleSortingHandler()
+                        : undefined
+                    }
                   >
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     {canSort && (
                       <span>
-                        {header.column.getIsSorted() === 'asc' ? ' 🔼' : header.column.getIsSorted() === 'desc' ? ' 🔽' : ''}
+                        {header.column.getIsSorted() === "asc"
+                          ? " 🔼"
+                          : header.column.getIsSorted() === "desc"
+                          ? " 🔽"
+                          : ""}
                       </span>
                     )}
                   </TableHead>
@@ -590,7 +767,10 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
         <TableBody className={joinClasses(c.tableBody)}>
           {busy ? (
             Array.from({ length: skeletonRows }).map((_, idx) => (
-              <TableRow key={idx} className={joinClasses(c.tableRow, c.skeletonRow)}>
+              <TableRow
+                key={idx}
+                className={joinClasses(c.tableRow, c.skeletonRow)}
+              >
                 {Array.from({ length: colsCount }).map((__, colIdx) => (
                   <TableCell key={colIdx} className={joinClasses(c.tableCell)}>
                     <div className={joinClasses(c.skeletonBar)} />
@@ -600,13 +780,19 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
             ))
           ) : isError ? (
             <TableRow className={joinClasses(c.tableRow)}>
-              <TableCell className={joinClasses(c.tableCell, c.messageCell)} colSpan={colsCount}>
+              <TableCell
+                className={joinClasses(c.tableCell, c.messageCell)}
+                colSpan={colsCount}
+              >
                 {labels.errorLoading}
               </TableCell>
             </TableRow>
           ) : rows.length === 0 ? (
             <TableRow className={joinClasses(c.tableRow)}>
-              <TableCell className={joinClasses(c.tableCell, c.messageCell)} colSpan={colsCount}>
+              <TableCell
+                className={joinClasses(c.tableCell, c.messageCell)}
+                colSpan={colsCount}
+              >
                 {labels.noResults}
               </TableCell>
             </TableRow>
@@ -634,10 +820,10 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
         context: actionsContext,
         onOpenModal: config.onOpenModal,
       };
-      if (currentViewMode === 'grid' && config.views?.renderGridItem) {
+      if (currentViewMode === "grid" && config.views?.renderGridItem) {
         return config.views.renderGridItem(args);
       }
-      if (currentViewMode === 'list' && config.views?.renderListItem) {
+      if (currentViewMode === "list" && config.views?.renderListItem) {
         return config.views.renderListItem(args);
       }
       return null;
@@ -646,13 +832,13 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   );
 
   const collectionInner =
-    currentViewMode === 'table' ? (
+    currentViewMode === "table" ? (
       tableInner
     ) : (
       <div
         className={joinClasses(
           c.tableScroll,
-          currentViewMode === 'grid' ? c.gridView : c.listView
+          currentViewMode === "grid" ? c.gridView : c.listView
         )}
       >
         {busy ? (
@@ -660,7 +846,7 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
             <div
               key={idx}
               className={joinClasses(
-                currentViewMode === 'grid' ? c.gridItem : c.listItem,
+                currentViewMode === "grid" ? c.gridItem : c.listItem,
                 c.skeletonRow
               )}
             >
@@ -668,14 +854,18 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
             </div>
           ))
         ) : isError ? (
-          <div className={joinClasses(c.messageCell)}>{labels.errorLoading}</div>
+          <div className={joinClasses(c.messageCell)}>
+            {labels.errorLoading}
+          </div>
         ) : tableData.length === 0 ? (
           <div className={joinClasses(c.messageCell)}>{labels.noResults}</div>
         ) : (
           tableData.map((record, index) => (
             <div
               key={index}
-              className={joinClasses(currentViewMode === 'grid' ? c.gridItem : c.listItem)}
+              className={joinClasses(
+                currentViewMode === "grid" ? c.gridItem : c.listItem
+              )}
             >
               {renderCollectionItem(record, index)}
             </div>
@@ -685,7 +875,9 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
     );
 
   const tableSection = LC?.TableShell ? (
-    <LC.TableShell classNames={{ tableOuter: c.tableOuter, tableScroll: c.tableScroll }}>
+    <LC.TableShell
+      classNames={{ tableOuter: c.tableOuter, tableScroll: c.tableScroll }}
+    >
       {collectionInner}
     </LC.TableShell>
   ) : (
@@ -704,12 +896,14 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
               {labels.pageLabel} {page}
               {totalPages != null && (
                 <>
-                  {' '}
+                  {" "}
                   {labels.ofLabel} {totalPages}
                 </>
               )}
-              {paginationSummary != null && paginationSummary !== '' && (
-                <span className={joinClasses(c.paginationMeta)}>{` · ${paginationSummary}`}</span>
+              {paginationSummary != null && paginationSummary !== "" && (
+                <span
+                  className={joinClasses(c.paginationMeta)}
+                >{` · ${paginationSummary}`}</span>
               )}
             </p>
           </div>
