@@ -45,6 +45,29 @@ function formatLabel(template: string, vars: Record<string, string | number>): s
   return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => String(vars[key] ?? ''));
 }
 
+function isDataTableViewMode(value: unknown): value is DataTableViewMode {
+  return value === 'table' || value === 'grid' || value === 'list';
+}
+
+function getViewModeStorageKey(tableId: string, customKey?: string): string {
+  return customKey || `genesis-react-data-table:${tableId}:view-mode`;
+}
+
+function readPersistedViewMode(
+  tableId: string,
+  views?: Pick<DataTableViewsConfig<never, FilterValues>, 'persistMode' | 'storageKey'>
+): DataTableViewMode | null {
+  if (views?.persistMode === false || typeof globalThis === 'undefined' || !('localStorage' in globalThis)) {
+    return null;
+  }
+  try {
+    const stored = globalThis.localStorage?.getItem(getViewModeStorageKey(tableId, views?.storageKey));
+    return isDataTableViewMode(stored) ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
 // Configuration object accepted by the DataTable component. Many fields mirror
 // the original component’s API but have been made optional or simplified. The
 // service property is required.
@@ -59,6 +82,8 @@ export interface DataTableConfig<TRecord, TFilters extends FilterValues = Filter
   };
   columns: DataTableColumnDef<TRecord>[];
   rowActions?: RowAction<TRecord, TFilters>[];
+  /** Set to `false` if you already render row actions in your own column definition. */
+  autoRowActionsColumn?: boolean;
   defaultPerPage?: number;
   actions?: TableAction<TRecord, TFilters>[];
   views?: DataTableViewsConfig<TRecord, TFilters>;
@@ -122,6 +147,10 @@ export interface DataTableViewsConfig<TRecord, TFilters extends FilterValues = F
   modes?: DataTableViewMode[];
   /** Initial view mode used on first render when it is also available. */
   defaultMode?: DataTableViewMode;
+  /** Persist the user's last chosen mode in localStorage. Defaults to `true`. */
+  persistMode?: boolean;
+  /** Override the localStorage key used when `persistMode` is enabled. */
+  storageKey?: string;
   /** Required if you enable the `grid` view mode. */
   renderGridItem?: (args: DataTableViewRendererArgs<TRecord, TFilters>) => React.ReactNode;
   /** Required if you enable the `list` view mode. */
@@ -159,7 +188,9 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
   const tableId = config.id || 'table';
   const [page, setPage] = React.useState(1);
   const [perPage, setPerPage] = React.useState(config.defaultPerPage ?? 10);
-  const [viewMode, setViewMode] = React.useState<DataTableViewMode>(config.views?.defaultMode ?? 'table');
+  const [viewMode, setViewMode] = React.useState<DataTableViewMode>(
+    () => readPersistedViewMode(tableId, config.views) ?? config.views?.defaultMode ?? 'table'
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [filters, setFilters] = React.useState<MergedTableFilters<TFilters>>(
     () => ({}) as MergedTableFilters<TFilters>
@@ -241,6 +272,20 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
     if (availableViewModes.includes(viewMode)) return;
     setViewMode(availableViewModes[0]);
   }, [availableViewModes, viewMode]);
+
+  React.useEffect(() => {
+    if (config.views?.persistMode === false || typeof globalThis === 'undefined' || !('localStorage' in globalThis)) {
+      return;
+    }
+    try {
+      globalThis.localStorage?.setItem(
+        getViewModeStorageKey(tableId, config.views?.storageKey),
+        currentViewMode
+      );
+    } catch {
+      // Ignore storage write failures so rendering is never blocked by browser policy.
+    }
+  }, [config.views?.persistMode, config.views?.storageKey, tableId, currentViewMode]);
 
   const actionsContext = React.useMemo<DataTableActionsContext<TRecord, TFilters>>(() => {
     return {
@@ -352,7 +397,7 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
       }
       return colCopy;
     });
-    if (!config.rowActions || config.rowActions.length === 0) {
+    if (!config.rowActions || config.rowActions.length === 0 || config.autoRowActionsColumn === false) {
       return normalizedColumns;
     }
     return [
@@ -371,7 +416,15 @@ export function DataTable<TRecord, TFilters extends FilterValues = FilterValues>
         ),
       } satisfies ColumnDef<TRecord>,
     ];
-  }, [config.columns, config.rowActions, tableId, labels.actionsColumn, actionsContext, config.onOpenModal]);
+  }, [
+    config.columns,
+    config.rowActions,
+    config.autoRowActionsColumn,
+    tableId,
+    labels.actionsColumn,
+    actionsContext,
+    config.onOpenModal,
+  ]);
 
   const table = useReactTable({
     data: tableData,

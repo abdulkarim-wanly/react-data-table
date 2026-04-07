@@ -3,6 +3,10 @@ const { renderToStaticMarkup } = require('react-dom/server');
 const { QueryClient, QueryClientProvider } = require('@tanstack/react-query');
 const { DataTable } = require('../dist/index.cjs.js');
 
+afterEach(() => {
+  delete global.localStorage;
+});
+
 function getDefaultQueryKey(config) {
   const tableId = config.id || 'table';
   const base = config.queryKey || [tableId];
@@ -74,6 +78,17 @@ describe('DataTable rowActions', () => {
 
   test('does not append the row actions header when rowActions are omitted', () => {
     const html = renderTable(baseConfig);
+
+    expect(html).toContain('Name');
+    expect(html).not.toContain('Actions');
+  });
+
+  test('does not append the built-in actions column when autoRowActionsColumn is false', () => {
+    const html = renderTable({
+      ...baseConfig,
+      autoRowActionsColumn: false,
+      rowActions: [{ id: 'view', label: 'View', onClick: async () => {} }],
+    });
 
     expect(html).toContain('Name');
     expect(html).not.toContain('Actions');
@@ -157,5 +172,55 @@ describe('DataTable view modes', () => {
 
     expect(html).toContain('<table');
     expect(html).not.toContain('Grid');
+  });
+
+  test('restores the persisted view mode from localStorage', () => {
+    global.localStorage = {
+      getItem: jest.fn(() => 'grid'),
+      setItem: jest.fn(),
+    };
+
+    const html = renderTable(
+      {
+        ...baseConfig,
+        id: 'users',
+        views: {
+          modes: ['table', 'grid'],
+          defaultMode: 'table',
+          renderGridItem: ({ record }) =>
+            React.createElement('article', { 'data-grid-item': record.id }, record.name),
+        },
+      },
+      { prefetchedData }
+    );
+
+    expect(global.localStorage.getItem).toHaveBeenCalledWith('genesis-react-data-table:users:view-mode');
+    expect(html).toContain('data-grid-item="1"');
+    expect(html).not.toContain('<table');
+  });
+
+  test('ignores persisted storage when views.persistMode is false', () => {
+    global.localStorage = {
+      getItem: jest.fn(() => 'grid'),
+      setItem: jest.fn(),
+    };
+
+    const html = renderTable(
+      {
+        ...baseConfig,
+        id: 'users',
+        views: {
+          modes: ['table', 'grid'],
+          defaultMode: 'table',
+          persistMode: false,
+          renderGridItem: ({ record }) =>
+            React.createElement('article', { 'data-grid-item': record.id }, record.name),
+        },
+      },
+      { prefetchedData }
+    );
+
+    expect(global.localStorage.getItem).not.toHaveBeenCalled();
+    expect(html).toContain('<table');
   });
 });

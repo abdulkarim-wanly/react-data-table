@@ -254,6 +254,7 @@ const config: DataTableConfig<Row, Filters> = {
 | `service.getAll` | **Required.** `(query: ServiceQuery<TFilters>) => Promise<ServiceResult<TRecord>>` |
 | `columns` | TanStack **`ColumnDef<TRecord>[]`**; you may use **`sortable?: boolean`** (alias for `enableSorting`) |
 | `rowActions` | **`RowAction<TRecord, TFilters>[]`** rendered by `DataTable` as a built-in trailing actions column |
+| `autoRowActionsColumn` | Defaults to `true`; set `false` if you already render row actions in your own table column |
 | `actions` | **`TableAction<TRecord, TFilters>[]`** for toolbar buttons |
 | `views` | Optional built-in view mode config for `table`, `grid`, and `list` |
 | `id` | Stable table id (default `"table"`); used in modal registry keys |
@@ -382,6 +383,7 @@ const config: DataTableConfig<Row> = {
   views: {
     modes: ["table", "grid", "list"],
     defaultMode: "table",
+    persistMode: true,
     renderGridItem: ({ record }) => (
       <article className="rounded-xl border p-4">
         <h3 className="font-semibold">{record.name}</h3>
@@ -403,6 +405,8 @@ Notes:
 - Include `grid` in `views.modes` only when `renderGridItem` is provided.
 - Include `list` in `views.modes` only when `renderListItem` is provided.
 - The built-in toggle appears automatically when more than one valid mode is available.
+- The user's last chosen view mode is persisted in `localStorage` by default using the table id.
+- Disable persistence with `views.persistMode = false`, or override the storage key with `views.storageKey`.
 - Customize toggle labels through `config.labels.viewAsTable`, `config.labels.viewAsGrid`, and `config.labels.viewAsList`.
 
 ---
@@ -410,6 +414,8 @@ Notes:
 ## Row actions and `UserActionCell`
 
 When you pass **`config.rowActions`**, `DataTable` appends a built-in trailing **Actions** column automatically. Override the header text with **`config.labels?.actionsColumn`**.
+
+If your existing table already renders actions through a custom column cell, set **`config.autoRowActionsColumn = false`** to avoid duplicate **Actions** columns in table view.
 
 Use **`UserActionCell`** inside a column cell when you need the same row actions as **`config.rowActions`**:
 
