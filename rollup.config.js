@@ -5,33 +5,39 @@ import peerDepsExternal from 'rollup-plugin-peer-deps-external';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
-// Optional: handle CSS modules or global CSS
-// import postcss from 'rollup-plugin-postcss';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'));
 
 export default {
-  input: 'src/index.ts',
+  input: ['src/index.ts', 'src/setup.ts'],
   output: [
     {
-      file: pkg.main,
+      dir: 'dist',
+      entryFileNames: '[name].cjs.js',
       format: 'cjs',
       sourcemap: true,
-      exports: 'named'
+      exports: 'named',
+      chunkFileNames: 'chunks/[name]-[hash].cjs.js',
     },
     {
-      file: pkg.module,
+      dir: 'dist',
+      entryFileNames: '[name].esm.js',
       format: 'esm',
-      sourcemap: true
-    }
+      sourcemap: true,
+      chunkFileNames: 'chunks/[name]-[hash].esm.js',
+    },
   ],
   plugins: [
     peerDepsExternal(),
     resolve(),
     commonjs(),
-    typescript({ tsconfig: './tsconfig.json', sourceMap: true, declaration: true, declarationDir: 'dist/types' })
-    // postcss({ extract: true, minimize: true })
+    typescript({
+      tsconfig: './tsconfig.json',
+      sourceMap: true,
+      declaration: true,
+      declarationDir: 'dist/types',
+    }),
   ],
-  external: ['react', 'react-dom']
+  external: ['react', 'react-dom'],
 };

@@ -30,6 +30,7 @@ export type {
   InlineFiltersRenderArgs,
   InlineFiltersUIProps,
 } from './components/InlineFiltersUI/InlineFiltersUI';
+/** Prefer `genesis-react-data-table/setup` in Vite apps if the main entry omits this export (stale optimize cache). */
 export { setDefaultDataTableFiltersHost } from './components/InlineFiltersUI/InlineFiltersUI';
 
 export type { TableAction, ActionButtonsBarProps } from './components/ActionButtonsBar/ActionButtonsBar';

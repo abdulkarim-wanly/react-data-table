@@ -237,11 +237,13 @@ const config: DataTableConfig<Row, Filters> = {
    **`main.tsx` / app bootstrap (once):**
 
    ```tsx
-   import { setDefaultDataTableFiltersHost } from "genesis-react-data-table";
+   import { setDefaultDataTableFiltersHost } from "genesis-react-data-table/setup";
    import { UnitDealsFiltersHost } from "@/components/filters/UnitDealsFiltersHost";
 
    setDefaultDataTableFiltersHost(UnitDealsFiltersHost);
    ```
+
+   (`genesis-react-data-table/setup` avoids Vite pre-bundle issues; the same export exists on the package root.)
 
    **`UnitDealsFiltersHost`** implements **`DataTableFiltersUIHostProps`**: it receives **`formConfig`** (the object returned by your `formConfig()`), **`onApply(values)`**, **`context`**, and **`filtersUI`** (the full config bag). Inside, render your existing dynamic form (the same one you used with the old table).
 
@@ -301,11 +303,37 @@ Wire **`onOpenModal`** on **`DataTable`** if actions return **`openModal`** payl
 
 **Components:** `DataTable`, `ActionButtonsBar`, `UserActionCell`, `SearchInput`, `InlineFiltersUI`, `componentCell` (column helper).
 
-**Registration:** `setDefaultDataTableFiltersHost` — see **`filtersUI`** section above.
+**Registration:** `setDefaultDataTableFiltersHost` from **`genesis-react-data-table`** or **`genesis-react-data-table/setup`** — see **`filtersUI`** and **Vite** sections above.
 
 **Types:** `DataTableConfig`, `DataTableProps`, `DataTableActionsContext`, `DataTableColumnDef`, `DataTableFiltersUIHostProps`, `DataTableFiltersUISlot`, `ServiceQuery`, `ServiceResult`, …
 
 **Util:** `isModalPayload` (for custom modal flows).
+
+---
+
+## Vite: `does not provide an export named 'setDefaultDataTableFiltersHost'`
+
+Usually a **stale dependency pre-bundle**. Try:
+
+1. Stop the dev server.
+2. Delete **`node_modules/.vite`** (and optionally **`node_modules/genesis-react-data-table`**).
+3. Reinstall the library (`npm install` / update your git ref), then **`npm run dev`** again.
+
+**Or** import the bootstrap API from the dedicated subpath (always a small, explicit export):
+
+```ts
+import { setDefaultDataTableFiltersHost } from "genesis-react-data-table/setup";
+```
+
+If it still fails, add to **`vite.config.ts`**:
+
+```ts
+export default defineConfig({
+  optimizeDeps: {
+    exclude: ["genesis-react-data-table"],
+  },
+});
+```
 
 ---
 
