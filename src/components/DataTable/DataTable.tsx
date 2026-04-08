@@ -879,7 +879,6 @@ export function DataTable<
           mapResults: labels.mapResults,
           mapNoCoordinates: labels.mapNoCoordinates,
           errorLoading: labels.errorLoading,
-          mapCloseDetail: labels.mapCloseDetail,
         }}
         isBusy={busy}
         isError={isError}

@@ -139,9 +139,9 @@ export interface DataTableMapViewConfig<TRecord, TFilters extends FilterValues =
   getCoordinates: (record: TRecord) => DataTableMapCoordinates | null | undefined;
   renderCard: (args: DataTableMapItemRenderArgs<TRecord, TFilters>) => ReactNode;
   /**
-   * `full` (default): map fills the area; tap a marker to open an interactive detail layer
-   * that renders `renderCard` (same contract as grid/list cards).
-   * `split`: legacy sidebar list plus map; optional `renderPopup` still uses static Leaflet HTML.
+   * `full` (default): map fills the container width (no sidebar); tap a marker to open a Leaflet
+   * popup whose content is `renderCard` mounted with React (interactive, same args as grid/list).
+   * `split`: sidebar list plus map; optional `renderPopup` uses static Leaflet HTML instead.
    */
   layout?: 'split' | 'full';
   renderPopup?: (args: DataTableMapItemRenderArgs<TRecord, TFilters>) => ReactNode;

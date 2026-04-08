@@ -131,7 +131,7 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
     'relative min-h-[min(72vh,720px)] w-full overflow-hidden rounded-2xl border border-slate-200/70 bg-slate-100 shadow-sm',
   mapCanvas: 'h-[min(72vh,720px)] min-h-[420px] w-full',
   mapEmptyState: 'flex min-h-[240px] items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white/70 p-6 text-center text-sm text-slate-500',
-  mapPopup: 'min-w-[180px]',
+  mapPopup: 'min-w-[220px] max-w-[min(100vw-2rem,28rem)]',
   pagination: 'flex items-center justify-between gap-3 text-sm mt-2',
   paginationInfo: '',
   paginationMeta: 'text-muted-foreground',

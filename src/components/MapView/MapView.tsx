@@ -1,5 +1,6 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { createRoot, type Root } from 'react-dom/client';
 import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 
 import type { DataTableClassNames, DataTableLabels } from '../../dataTableLayout';
@@ -30,10 +31,7 @@ type MapClassNames = Pick<
   | 'mapPopup'
 >;
 
-type MapLabels = Pick<
-  DataTableLabels,
-  'mapResults' | 'mapNoCoordinates' | 'errorLoading' | 'mapCloseDetail'
->;
+type MapLabels = Pick<DataTableLabels, 'mapResults' | 'mapNoCoordinates' | 'errorLoading'>;
 
 type MappedRecord<TRecord> = {
   record: TRecord;
@@ -84,7 +82,7 @@ function applyMarkerStyles(element: HTMLButtonElement, isActive: boolean): void 
   Object.assign(element.style, getMarkerStyles(isActive));
 }
 
-function createMarkerElement(onSelect: () => void): HTMLButtonElement {
+function createMarkerElement(onActivate: () => void): HTMLButtonElement {
   const element = document.createElement('button');
   element.type = 'button';
   element.setAttribute('aria-label', 'Map marker');
@@ -96,7 +94,7 @@ function createMarkerElement(onSelect: () => void): HTMLButtonElement {
   element.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
-    onSelect();
+    onActivate();
   });
   return element;
 }
@@ -138,9 +136,23 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
   const mapRef = React.useRef<LeafletMap | null>(null);
   const markersRef = React.useRef<Map<number, MarkerEntry>>(new Map());
   const cardRefs = React.useRef<Map<number, HTMLButtonElement | null>>(new Map());
+  const popupRootsRef = React.useRef<Map<number, Root>>(new Map());
   const activeIndexRef = React.useRef<number | null>(null);
   const layoutRef = React.useRef(layout);
   layoutRef.current = layout;
+
+  const latestPopupRef = React.useRef({
+    renderCard: config.renderCard,
+    context,
+    onOpenModal,
+    classNames,
+    selectItem: (() => {}) as (index: number) => void,
+  });
+  latestPopupRef.current.renderCard = config.renderCard;
+  latestPopupRef.current.context = context;
+  latestPopupRef.current.onOpenModal = onOpenModal;
+  latestPopupRef.current.classNames = classNames;
+
   const [mapError, setMapError] = React.useState<string | null>(null);
 
   const mappedRecords = React.useMemo<MappedRecord<TRecord>[]>(() => {
@@ -178,10 +190,7 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
   }, [activeIndex, layout]);
 
   const selectItem = React.useCallback((index: number) => setActiveIndex(index), []);
-
-  const dismissDetail = React.useCallback(() => {
-    if (layout === 'full') setActiveIndex(null);
-  }, [layout]);
+  latestPopupRef.current.selectItem = selectItem;
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -191,6 +200,7 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
 
     let isDisposed = false;
     const useSplitPopups = layoutRef.current === 'split';
+    const useFullPopups = layoutRef.current === 'full';
 
     (async () => {
       try {
@@ -218,18 +228,17 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
           L.control.zoom({ position: 'topright' }).addTo(map);
         }
 
-        if (layoutRef.current === 'full') {
-          map.on('click', () => {
-            setActiveIndex(null);
-          });
-        }
-
         const bounds = L.latLngBounds([]);
 
         mappedRecords.forEach((item) => {
           bounds.extend([item.coordinates.lat, item.coordinates.lng]);
 
-          const markerElement = createMarkerElement(() => selectItem(item.index));
+          const markerRef: { current: LeafletMarker | null } = { current: null };
+
+          const markerElement = createMarkerElement(() => {
+            selectItem(item.index);
+            markerRef.current?.openPopup();
+          });
 
           const icon = L.divIcon({
             className: 'grdt-leaflet-marker',
@@ -239,6 +248,7 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
           });
 
           const marker = L.marker([item.coordinates.lat, item.coordinates.lng], { icon }).addTo(map);
+          markerRef.current = marker;
 
           const iconEl = marker.getElement();
           if (iconEl) {
@@ -247,10 +257,12 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
             iconEl.appendChild(markerElement);
           }
 
-          marker.on('click', (e: { originalEvent: Event }) => {
-            L.DomEvent.stopPropagation(e.originalEvent);
-            selectItem(item.index);
-          });
+          if (!useFullPopups) {
+            marker.on('click', (e: { originalEvent: Event }) => {
+              L.DomEvent.stopPropagation(e.originalEvent);
+              selectItem(item.index);
+            });
+          }
 
           if (useSplitPopups) {
             const args: DataTableMapItemRenderArgs<TRecord, TFilters> = {
@@ -272,6 +284,42 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
                 className: classNames.mapPopup,
               });
             }
+          }
+
+          if (useFullPopups) {
+            const popupEl = document.createElement('div');
+            marker.bindPopup(popupEl, {
+              className: joinMapClasses('grdt-map-popup', classNames.mapPopup),
+              maxWidth: 560,
+              minWidth: 220,
+              closeButton: true,
+              autoClose: true,
+              closeOnClick: true,
+            });
+
+            marker.on('popupopen', () => {
+              selectItem(item.index);
+              const root = createRoot(popupEl);
+              popupRootsRef.current.set(item.index, root);
+              const { renderCard, context: ctx, onOpenModal: openModal, classNames: cn } = latestPopupRef.current;
+              const args: DataTableMapItemRenderArgs<TRecord, TFilters> = {
+                record: item.record,
+                index: item.index,
+                context: ctx,
+                coordinates: item.coordinates,
+                isActive: true,
+                select: () => latestPopupRef.current.selectItem(item.index),
+                onOpenModal: openModal,
+              };
+              root.render(<div className={cn.mapCard}>{renderCard(args)}</div>);
+            });
+
+            marker.on('popupclose', () => {
+              const root = popupRootsRef.current.get(item.index);
+              root?.unmount();
+              popupRootsRef.current.delete(item.index);
+              setActiveIndex((current) => (current === item.index ? null : current));
+            });
           }
 
           markersRef.current.set(item.index, {
@@ -296,6 +344,14 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
 
     return () => {
       isDisposed = true;
+      popupRootsRef.current.forEach((root) => {
+        try {
+          root.unmount();
+        } catch {
+          // Popup node may already be detached by Leaflet.
+        }
+      });
+      popupRootsRef.current.clear();
       markersRef.current.forEach(({ marker }) => marker.remove());
       markersRef.current.clear();
       mapRef.current?.remove();
@@ -357,26 +413,32 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
     );
   }, [activeIndex, classNames.mapPopup, config, context, layout, mappedRecords, onOpenModal, selectItem]);
 
+  /** Re-render open Leaflet popups (full layout) when table context or card renderer changes. */
+  React.useEffect(() => {
+    if (layout !== 'full') return;
+    markersRef.current.forEach((entry, index) => {
+      if (!entry.marker.isPopupOpen()) return;
+      const item = mappedRecords.find((m) => m.index === index);
+      if (!item) return;
+      const root = popupRootsRef.current.get(index);
+      if (!root) return;
+      const args: DataTableMapItemRenderArgs<TRecord, TFilters> = {
+        record: item.record,
+        index: item.index,
+        context,
+        coordinates: item.coordinates,
+        isActive: true,
+        select: () => selectItem(item.index),
+        onOpenModal,
+      };
+      root.render(<div className={classNames.mapCard}>{config.renderCard(args)}</div>);
+    });
+  }, [layout, mappedRecords, context, config.renderCard, classNames.mapCard, onOpenModal, selectItem]);
+
   const rootClass = joinMapClasses(
     classNames.mapViewRoot,
     layout === 'split' ? classNames.mapViewSplitGrid : ''
   );
-
-  const activeRecord =
-    activeIndex != null ? mappedRecords.find((item) => item.index === activeIndex) : undefined;
-
-  const detailArgs: DataTableMapItemRenderArgs<TRecord, TFilters> | null =
-    activeRecord != null
-      ? {
-          record: activeRecord.record,
-          index: activeRecord.index,
-          context,
-          coordinates: activeRecord.coordinates,
-          isActive: true,
-          select: () => selectItem(activeRecord.index),
-          onOpenModal,
-        }
-      : null;
 
   const showMapCanvas = !isBusy && !isError && mappedRecords.length > 0 && !mapError;
 
@@ -472,31 +534,6 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
           style={showMapCanvas ? undefined : { display: 'none' }}
         />
       </div>
-
-      {layout === 'full' && showMapCanvas && detailArgs ? (
-        <div
-          className={classNames.mapDetailPanel}
-          role="dialog"
-          aria-modal="false"
-          aria-label={
-            typeof config.sidebarTitle === 'string' || typeof config.sidebarTitle === 'number'
-              ? String(config.sidebarTitle)
-              : labels.mapResults
-          }
-        >
-          <div className="pointer-events-auto relative w-full max-w-lg">
-            <button
-              type="button"
-              className={classNames.mapDetailClose}
-              onClick={dismissDetail}
-              aria-label={labels.mapCloseDetail}
-            >
-              ×
-            </button>
-            <div className={classNames.mapCard}>{config.renderCard(detailArgs)}</div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
