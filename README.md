@@ -14,7 +14,6 @@ Configurable **React** data table built on [**TanStack Table**](https://tanstack
 | `@tanstack/react-table` | v8 |
 | `react-i18next` | >= 11 (e.g. 15.x is supported) + `i18next` |
 | `lucide-react` | >= 0.400 - icons used by the built-in search UI |
-| `@radix-ui/react-dropdown-menu` | v2 - chrome toolbar **View** menu (shadcn-style) |
 | `leaflet` | v1.9 when you use the built-in map view |
 
 ## Installation
@@ -51,7 +50,7 @@ npm install git+https://github.com/YOUR_ORG/YOUR_REPO.git
 Then add **peer dependencies** in the same project (npm does not always install peers for git deps):
 
 ```bash
-npm install @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react @radix-ui/react-dropdown-menu leaflet
+npm install @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react leaflet
 ```
 
 **Note:** The repo is set up so **`dist/`** is not required in Git — the first install runs **`npm run build`** via **`prepare`**. If you prefer faster installs and no build on the consumer machine, you can commit **`dist/`** and remove **`dist/`** from **`.gitignore`** (optional).
@@ -69,7 +68,7 @@ npm install @tanstack/react-query @tanstack/react-table react-i18next i18next lu
 ### From the npm registry (optional)
 
 ```bash
-npm install genesis-react-data-table @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react @radix-ui/react-dropdown-menu leaflet
+npm install genesis-react-data-table @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react leaflet
 ```
 
 If npm reports peer conflicts, align versions with the table above, or use `npm install --legacy-peer-deps` only as a last resort.
@@ -210,7 +209,7 @@ export function SettingsHeader() {
 }
 ```
 
-**Chrome toolbar (default)** — With **`config.chromeToolbar !== false`** (the default), **`filtersUI`** / **`renderFilters`** output is shown **in the same toolbar row as the search field** (hosted **`InlineFiltersUI`** / your render). **View** uses a polished **Radix / shadcn-style** dropdown (`@radix-ui/react-dropdown-menu`) that shows the active mode in the trigger; **Refresh** refetches data. There is **no** toolbar sort menu or **Reset filters** button on the bar (use your filter UI or **`context.resetFilters`**). The chrome sits above the table inside **`tableBlock`**. Set **`chromeToolbar: false`** for the legacy light filters row and outline view buttons.
+**Chrome toolbar (default)** — With **`config.chromeToolbar !== false`** (the default), **`filtersUI`** / **`renderFilters`** output is shown **in the same toolbar row as the search field** (hosted **`InlineFiltersUI`** / your render). **View** uses the built-in dropdown that shows the active mode in the trigger; **Refresh** refetches data. There is **no** toolbar sort menu or **Reset filters** button on the bar (use your filter UI or **`context.resetFilters`**). The chrome sits above the table inside **`tableBlock`**. Set **`chromeToolbar: false`** for the legacy light filters row and outline view buttons.
 
 ---
 
@@ -308,7 +307,7 @@ The default tiles are **OpenStreetMap**; no API key is required. Follow the [Ope
 | `classNames` | Partial **`DataTableClassNames`** — Tailwind (or any) classes per layout region; see **Styling** above |
 | `labels` | Partial **`DataTableLabels`** — error/empty/pagination copy |
 | `layoutComponents` | Optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** to replace default layout wrappers |
-| `chromeToolbar` | Default **`true`**: professional chrome toolbar (search, **View** dropdown, refresh) with **filters beside search** when `filtersUI` / `renderFilters` is set. Requires **`@radix-ui/react-dropdown-menu`**. Set **`false`** for the legacy filters row and outline view buttons |
+| `chromeToolbar` | Default **`true`**: professional chrome toolbar (search, **View** dropdown, refresh) with **filters beside search** when `filtersUI` / `renderFilters` is set. Uses the built-in dropdown implementation. Set **`false`** for the legacy filters row and outline view buttons |
 
 ### Pagination and `meta`
 
@@ -590,4 +589,3 @@ npm test
 ## License
 
 MIT — see `LICENSE`.
-

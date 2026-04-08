@@ -92,12 +92,12 @@ export interface DataTableClassNames {
   toolbarRow: string;
   toolbarLeft: string;
   toolbarRight: string;
-  /** View menu trigger (Radix / shadcn-style dropdown). */
+  /** View menu trigger for the built-in dropdown. */
   toolbarMenuButton: string;
   toolbarMenuLabel: string;
   toolbarMenuIcon: string;
   toolbarChevron: string;
-  /** Radix `DropdownMenuContent` (popover panel). */
+  /** Built-in dropdown content panel. */
   toolbarDropdownMenuContent: string;
   toolbarDropdownMenuItem: string;
   toolbarDropdownMenuItemActive: string;
