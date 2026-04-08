@@ -3,7 +3,6 @@ import type { SortingState } from '@tanstack/react-table';
 import {
   ArrowUpDown,
   ChevronDown,
-  Filter,
   RefreshCw,
   SlidersHorizontal,
 } from 'lucide-react';
@@ -31,11 +30,9 @@ type ToolbarClassNames = Pick<
   | 'toolbarDropdownAlignEnd'
   | 'toolbarDropdownItem'
   | 'toolbarDropdownItemActive'
-  | 'toolbarFiltersStrip'
-  | 'toolbarFiltersStripHeader'
-  | 'toolbarFiltersStripTitle'
-  | 'toolbarFiltersStripBody'
-  | 'toolbarFiltersStripResetButton'
+  | 'toolbarSearchFiltersCluster'
+  | 'toolbarFiltersBeside'
+  | 'toolbarFiltersBesideResetButton'
   | 'toolbarSearchWrap'
   | 'toolbarRefreshButton'
 >;
@@ -46,7 +43,6 @@ type ToolbarLabels = Pick<
   | 'toolbarView'
   | 'toolbarRefresh'
   | 'toolbarSortClear'
-  | 'toolbarFiltersDialogTitleLabel'
   | 'toolbarResetFilters'
   | 'viewAsTable'
   | 'viewAsGrid'
@@ -57,7 +53,7 @@ type ToolbarLabels = Pick<
 export interface DataTableToolbarProps {
   classNames: ToolbarClassNames;
   labels: ToolbarLabels;
-  /** Hosted filters (`InlineFiltersUI` / `renderFilters`) rendered inline below the toolbar row. */
+  /** Hosted filters (`InlineFiltersUI` / `renderFilters`) — shown beside the search field. */
   filtersPanel: React.ReactNode | null;
   hasFilters: boolean;
   /** Wired to table `resetFilters` (clears filters + search). */
@@ -117,6 +113,7 @@ export function DataTableToolbar({
 
   const hasSort = sortColumns.length > 0;
   const hasViews = viewModes.length > 1;
+  const showSearchFiltersCluster = Boolean(searchSlot || (hasFilters && filtersPanel));
 
   const currentSort = sorting[0];
 
@@ -197,8 +194,24 @@ export function DataTableToolbar({
             </div>
           ) : null}
 
-          {searchSlot ? (
-            <div className={joinClasses(c.toolbarSearchWrap)}>{searchSlot}</div>
+          {showSearchFiltersCluster ? (
+            <div className={joinClasses(c.toolbarSearchFiltersCluster)}>
+              {searchSlot ? (
+                <div className={joinClasses(c.toolbarSearchWrap)}>{searchSlot}</div>
+              ) : null}
+              {hasFilters && filtersPanel ? (
+                <div className={joinClasses(c.toolbarFiltersBeside)}>{filtersPanel}</div>
+              ) : null}
+              {hasFilters && filtersPanel ? (
+                <button
+                  type="button"
+                  className={joinClasses(c.toolbarFiltersBesideResetButton)}
+                  onClick={() => onResetFilters()}
+                >
+                  {labels.toolbarResetFilters}
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
@@ -272,25 +285,6 @@ export function DataTableToolbar({
           </button>
         </div>
       </div>
-
-      {hasFilters && filtersPanel ? (
-        <div className={joinClasses(c.toolbarFiltersStrip)}>
-          <div className={joinClasses(c.toolbarFiltersStripHeader)}>
-            <div className={joinClasses(c.toolbarFiltersStripTitle)}>
-              <Filter className="h-4 w-4 shrink-0 text-neutral-600 dark:text-neutral-400" aria-hidden />
-              <span>{labels.toolbarFiltersDialogTitleLabel}</span>
-            </div>
-            <button
-              type="button"
-              className={joinClasses(c.toolbarFiltersStripResetButton)}
-              onClick={() => onResetFilters()}
-            >
-              {labels.toolbarResetFilters}
-            </button>
-          </div>
-          <div className={joinClasses(c.toolbarFiltersStripBody)}>{filtersPanel}</div>
-        </div>
-      ) : null}
     </div>
   );
 }

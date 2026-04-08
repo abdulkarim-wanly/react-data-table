@@ -104,14 +104,12 @@ export interface DataTableClassNames {
   toolbarDropdownAlignEnd: string;
   toolbarDropdownItem: string;
   toolbarDropdownItemActive: string;
-  /** Inline filters region below the dark toolbar row (hosted `filtersUI` / `InlineFiltersUI`). */
-  toolbarFiltersStrip: string;
-  toolbarFiltersStripHeader: string;
-  toolbarFiltersStripTitle: string;
-  /** Hosted filters + default host mount here. */
-  toolbarFiltersStripBody: string;
-  /** Reset control in the strip header (same as table `resetFilters`). */
-  toolbarFiltersStripResetButton: string;
+  /** Wraps search + hosted filters + reset in one row beside each other (chrome toolbar). */
+  toolbarSearchFiltersCluster: string;
+  /** Hosted `filtersUI` / `InlineFiltersUI` mount (next to search). */
+  toolbarFiltersBeside: string;
+  /** Compact reset control on the dark bar (same as table `resetFilters`). */
+  toolbarFiltersBesideResetButton: string;
   toolbarSearchWrap: string;
   toolbarRefreshButton: string;
   /** Extra classes for search input in the chrome toolbar (contrast on dark bar). */
@@ -190,16 +188,13 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   toolbarDropdownItem:
     'flex w-full items-center px-3 py-2.5 text-left text-sm text-neutral-100 transition hover:bg-white/10',
   toolbarDropdownItemActive: 'bg-white/15 font-medium text-white',
-  toolbarFiltersStrip:
-    'border-t border-white/10 bg-white text-neutral-900 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100',
-  toolbarFiltersStripHeader:
-    'flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-4 py-2.5 dark:border-neutral-800',
-  toolbarFiltersStripTitle:
-    'flex items-center gap-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100',
-  toolbarFiltersStripBody: 'max-h-[min(50vh,28rem)] overflow-y-auto px-4 py-4',
-  toolbarFiltersStripResetButton:
-    'shrink-0 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800',
-  toolbarSearchWrap: 'min-w-0 flex-1 max-w-md',
+  toolbarSearchFiltersCluster:
+    'flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3',
+  toolbarFiltersBeside:
+    'min-w-0 flex-1 basis-full sm:basis-auto sm:max-w-[min(100%,36rem)] [&_input]:max-w-full [&_select]:max-w-full',
+  toolbarFiltersBesideResetButton:
+    'shrink-0 rounded-lg border border-white/25 bg-white/5 px-3 py-2 text-sm font-medium text-neutral-100 transition hover:bg-white/10',
+  toolbarSearchWrap: 'min-w-0 w-full max-w-md sm:w-auto sm:max-w-md',
   toolbarRefreshButton:
     'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-100 transition hover:bg-white/10 disabled:opacity-50',
   toolbarSearchInput:
