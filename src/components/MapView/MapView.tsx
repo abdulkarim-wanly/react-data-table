@@ -15,6 +15,10 @@ import type {
 type MapClassNames = Pick<
   DataTableClassNames,
   | 'mapViewRoot'
+  | 'mapViewSplitGrid'
+  | 'mapFloatingBar'
+  | 'mapDetailPanel'
+  | 'mapDetailClose'
   | 'mapSidebar'
   | 'mapSidebarHeader'
   | 'mapSidebarList'
@@ -26,7 +30,10 @@ type MapClassNames = Pick<
   | 'mapPopup'
 >;
 
-type MapLabels = Pick<DataTableLabels, 'mapResults' | 'mapNoCoordinates' | 'errorLoading'>;
+type MapLabels = Pick<
+  DataTableLabels,
+  'mapResults' | 'mapNoCoordinates' | 'errorLoading' | 'mapCloseDetail'
+>;
 
 type MappedRecord<TRecord> = {
   record: TRecord;
@@ -42,6 +49,10 @@ type MarkerEntry = {
 const DEFAULT_TILE_LAYER_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const DEFAULT_TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+function joinMapClasses(...parts: (string | undefined | false)[]): string {
+  return parts.filter(Boolean).join(' ').trim();
+}
 
 function hasValidCoordinates(value: DataTableMapCoordinates | null | undefined): value is DataTableMapCoordinates {
   return (
@@ -84,6 +95,7 @@ function createMarkerElement(onSelect: () => void): HTMLButtonElement {
   applyMarkerStyles(element, false);
   element.addEventListener('click', (event) => {
     event.preventDefault();
+    event.stopPropagation();
     onSelect();
   });
   return element;
@@ -121,11 +133,14 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
   skeletonRows,
   onOpenModal,
 }: MapViewProps<TRecord, TFilters>) {
+  const layout = config.layout ?? 'full';
   const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
   const mapRef = React.useRef<LeafletMap | null>(null);
   const markersRef = React.useRef<Map<number, MarkerEntry>>(new Map());
   const cardRefs = React.useRef<Map<number, HTMLButtonElement | null>>(new Map());
   const activeIndexRef = React.useRef<number | null>(null);
+  const layoutRef = React.useRef(layout);
+  layoutRef.current = layout;
   const [mapError, setMapError] = React.useState<string | null>(null);
 
   const mappedRecords = React.useMemo<MappedRecord<TRecord>[]>(() => {
@@ -138,22 +153,35 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
     }, []);
   }, [records, config]);
 
-  const [activeIndex, setActiveIndex] = React.useState<number | null>(mappedRecords[0]?.index ?? null);
+  const [activeIndex, setActiveIndex] = React.useState<number | null>(() =>
+    layout === 'split' ? (mappedRecords[0]?.index ?? null) : null
+  );
 
   activeIndexRef.current = activeIndex;
 
   React.useEffect(() => {
-    if (mappedRecords.some((item) => item.index === activeIndex)) return;
-    setActiveIndex(mappedRecords[0]?.index ?? null);
-  }, [mappedRecords, activeIndex]);
+    setActiveIndex((prev) => {
+      if (layout === 'split') {
+        if (prev != null && mappedRecords.some((item) => item.index === prev)) return prev;
+        return mappedRecords[0]?.index ?? null;
+      }
+      if (prev == null) return null;
+      return mappedRecords.some((item) => item.index === prev) ? prev : null;
+    });
+  }, [layout, mappedRecords]);
 
   React.useEffect(() => {
+    if (layout !== 'split') return;
     if (activeIndex == null) return;
     const card = cardRefs.current.get(activeIndex);
     card?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [activeIndex]);
+  }, [activeIndex, layout]);
 
   const selectItem = React.useCallback((index: number) => setActiveIndex(index), []);
+
+  const dismissDetail = React.useCallback(() => {
+    if (layout === 'full') setActiveIndex(null);
+  }, [layout]);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -162,6 +190,7 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
     if (mappedRecords.length === 0 || isBusy || isError) return;
 
     let isDisposed = false;
+    const useSplitPopups = layoutRef.current === 'split';
 
     (async () => {
       try {
@@ -189,6 +218,12 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
           L.control.zoom({ position: 'topright' }).addTo(map);
         }
 
+        if (layoutRef.current === 'full') {
+          map.on('click', () => {
+            setActiveIndex(null);
+          });
+        }
+
         const bounds = L.latLngBounds([]);
 
         mappedRecords.forEach((item) => {
@@ -212,28 +247,31 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
             iconEl.appendChild(markerElement);
           }
 
-          marker.on('click', () => {
+          marker.on('click', (e: { originalEvent: Event }) => {
+            L.DomEvent.stopPropagation(e.originalEvent);
             selectItem(item.index);
           });
 
-          const args: DataTableMapItemRenderArgs<TRecord, TFilters> = {
-            record: item.record,
-            index: item.index,
-            context,
-            coordinates: item.coordinates,
-            isActive: item.index === activeIndexRef.current,
-            select: () => selectItem(item.index),
-            onOpenModal,
-          };
+          if (useSplitPopups) {
+            const args: DataTableMapItemRenderArgs<TRecord, TFilters> = {
+              record: item.record,
+              index: item.index,
+              context,
+              coordinates: item.coordinates,
+              isActive: item.index === activeIndexRef.current,
+              select: () => selectItem(item.index),
+              onOpenModal,
+            };
 
-          const popupMarkup = getPopupMarkup(config.renderPopup, args, classNames.mapPopup);
-          if (popupMarkup) {
-            marker.bindPopup(popupMarkup, {
-              closeButton: false,
-              autoClose: false,
-              closeOnClick: false,
-              className: classNames.mapPopup,
-            });
+            const popupMarkup = getPopupMarkup(config.renderPopup, args, classNames.mapPopup);
+            if (popupMarkup) {
+              marker.bindPopup(popupMarkup, {
+                closeButton: false,
+                autoClose: false,
+                closeOnClick: false,
+                className: classNames.mapPopup,
+              });
+            }
           }
 
           markersRef.current.set(item.index, {
@@ -280,6 +318,8 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
       const isActive = index === activeIndex;
       applyMarkerStyles(entry.element, isActive);
 
+      if (layout !== 'split') return;
+
       const item = mappedRecords.find((m) => m.index === index);
       if (!item) return;
 
@@ -315,66 +355,106 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
       Math.max(mapRef.current.getZoom(), config.initialZoom ?? 12),
       { animate: true }
     );
-  }, [activeIndex, classNames.mapPopup, config, context, mappedRecords, onOpenModal, selectItem]);
+  }, [activeIndex, classNames.mapPopup, config, context, layout, mappedRecords, onOpenModal, selectItem]);
+
+  const rootClass = joinMapClasses(
+    classNames.mapViewRoot,
+    layout === 'split' ? classNames.mapViewSplitGrid : ''
+  );
+
+  const activeRecord =
+    activeIndex != null ? mappedRecords.find((item) => item.index === activeIndex) : undefined;
+
+  const detailArgs: DataTableMapItemRenderArgs<TRecord, TFilters> | null =
+    activeRecord != null
+      ? {
+          record: activeRecord.record,
+          index: activeRecord.index,
+          context,
+          coordinates: activeRecord.coordinates,
+          isActive: true,
+          select: () => selectItem(activeRecord.index),
+          onOpenModal,
+        }
+      : null;
+
+  const showMapCanvas = !isBusy && !isError && mappedRecords.length > 0 && !mapError;
 
   return (
-    <div className={classNames.mapViewRoot}>
-      <div className={classNames.mapSidebar}>
-        <div className={classNames.mapSidebarHeader}>
-          <span>{config.sidebarTitle ?? labels.mapResults}</span>
-          <span>{mappedRecords.length}</span>
+    <div className={rootClass} data-genesis-map-layout={layout}>
+      {layout === 'full' && showMapCanvas ? (
+        <div className={classNames.mapFloatingBar}>
+          <span className="min-w-0 flex-1 truncate">{config.sidebarTitle ?? labels.mapResults}</span>
+          <span
+            className="shrink-0 rounded-lg bg-slate-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-slate-700"
+            aria-label={labels.mapResults}
+          >
+            {mappedRecords.length}
+          </span>
         </div>
-        {isBusy ? (
-          <div className={classNames.mapSidebarList}>
-            {Array.from({ length: skeletonRows }).map((_, index) => (
-              <div key={index} className={classNames.mapCard}>
-                <div style={{ height: "14px", width: "60%", borderRadius: "999px", background: "#e2e8f0" }} />
-                <div
-                  style={{
-                    height: "12px",
-                    width: "85%",
-                    borderRadius: "999px",
-                    background: "#e2e8f0",
-                    marginTop: "12px",
-                  }}
-                />
-              </div>
-            ))}
+      ) : null}
+
+      {layout === 'split' ? (
+        <div className={classNames.mapSidebar}>
+          <div className={classNames.mapSidebarHeader}>
+            <span>{config.sidebarTitle ?? labels.mapResults}</span>
+            <span>{mappedRecords.length}</span>
           </div>
-        ) : isError ? (
-          <div className={classNames.mapEmptyState}>{labels.errorLoading}</div>
-        ) : mappedRecords.length === 0 ? (
-          <div className={classNames.mapEmptyState}>{labels.mapNoCoordinates}</div>
-        ) : (
-          <div className={classNames.mapSidebarList}>
-            {mappedRecords.map((item) => {
-              const isActive = item.index === activeIndex;
-              const args: DataTableMapItemRenderArgs<TRecord, TFilters> = {
-                record: item.record,
-                index: item.index,
-                context,
-                coordinates: item.coordinates,
-                isActive,
-                select: () => selectItem(item.index),
-                onOpenModal,
-              };
-              return (
-                <button
-                  key={item.index}
-                  ref={(element) => {
-                    cardRefs.current.set(item.index, element);
-                  }}
-                  type="button"
-                  className={`${classNames.mapCard} ${isActive ? classNames.mapCardActive : ''}`.trim()}
-                  onClick={() => selectItem(item.index)}
-                >
-                  {config.renderCard(args)}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+          {isBusy ? (
+            <div className={classNames.mapSidebarList}>
+              {Array.from({ length: skeletonRows }).map((_, index) => (
+                <div key={index} className={classNames.mapCard}>
+                  <div style={{ height: '14px', width: '60%', borderRadius: '999px', background: '#e2e8f0' }} />
+                  <div
+                    style={{
+                      height: '12px',
+                      width: '85%',
+                      borderRadius: '999px',
+                      background: '#e2e8f0',
+                      marginTop: '12px',
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : isError ? (
+            <div className={classNames.mapEmptyState}>{labels.errorLoading}</div>
+          ) : mappedRecords.length === 0 ? (
+            <div className={classNames.mapEmptyState}>{labels.mapNoCoordinates}</div>
+          ) : (
+            <div className={classNames.mapSidebarList}>
+              {mappedRecords.map((item) => {
+                const isActive = item.index === activeIndex;
+                const args: DataTableMapItemRenderArgs<TRecord, TFilters> = {
+                  record: item.record,
+                  index: item.index,
+                  context,
+                  coordinates: item.coordinates,
+                  isActive,
+                  select: () => selectItem(item.index),
+                  onOpenModal,
+                };
+                return (
+                  <button
+                    key={item.index}
+                    ref={(element) => {
+                      cardRefs.current.set(item.index, element);
+                    }}
+                    type="button"
+                    className={joinMapClasses(
+                      classNames.mapCard,
+                      isActive ? classNames.mapCardActive : ''
+                    )}
+                    onClick={() => selectItem(item.index)}
+                  >
+                    {config.renderCard(args)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : null}
 
       <div className={classNames.mapCanvasShell}>
         {isBusy ? (
@@ -389,13 +469,34 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
         <div
           ref={mapContainerRef}
           className={classNames.mapCanvas}
-          style={
-            mappedRecords.length === 0 || mapError || isBusy || isError
-              ? { display: "none" }
-              : undefined
-          }
+          style={showMapCanvas ? undefined : { display: 'none' }}
         />
       </div>
+
+      {layout === 'full' && showMapCanvas && detailArgs ? (
+        <div
+          className={classNames.mapDetailPanel}
+          role="dialog"
+          aria-modal="false"
+          aria-label={
+            typeof config.sidebarTitle === 'string' || typeof config.sidebarTitle === 'number'
+              ? String(config.sidebarTitle)
+              : labels.mapResults
+          }
+        >
+          <div className="pointer-events-auto relative w-full max-w-lg">
+            <button
+              type="button"
+              className={classNames.mapDetailClose}
+              onClick={dismissDetail}
+              aria-label={labels.mapCloseDetail}
+            >
+              ×
+            </button>
+            <div className={classNames.mapCard}>{config.renderCard(detailArgs)}</div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

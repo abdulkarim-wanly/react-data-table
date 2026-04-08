@@ -138,6 +138,12 @@ export interface DataTableMapItemRenderArgs<TRecord, TFilters extends FilterValu
 export interface DataTableMapViewConfig<TRecord, TFilters extends FilterValues = FilterValues> {
   getCoordinates: (record: TRecord) => DataTableMapCoordinates | null | undefined;
   renderCard: (args: DataTableMapItemRenderArgs<TRecord, TFilters>) => ReactNode;
+  /**
+   * `full` (default): map fills the area; tap a marker to open an interactive detail layer
+   * that renders `renderCard` (same contract as grid/list cards).
+   * `split`: legacy sidebar list plus map; optional `renderPopup` still uses static Leaflet HTML.
+   */
+  layout?: 'split' | 'full';
   renderPopup?: (args: DataTableMapItemRenderArgs<TRecord, TFilters>) => ReactNode;
   sidebarTitle?: ReactNode;
   /** Raster tile URL template (Leaflet `{s}`, `{z}`, `{x}`, `{y}`). Defaults to OpenStreetMap’s standard tile layer. */

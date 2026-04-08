@@ -861,6 +861,10 @@ export function DataTable<
         config={config.views.map}
         classNames={{
           mapViewRoot: c.mapViewRoot,
+          mapViewSplitGrid: c.mapViewSplitGrid,
+          mapFloatingBar: c.mapFloatingBar,
+          mapDetailPanel: c.mapDetailPanel,
+          mapDetailClose: c.mapDetailClose,
           mapSidebar: c.mapSidebar,
           mapSidebarHeader: c.mapSidebarHeader,
           mapSidebarList: c.mapSidebarList,
@@ -875,6 +879,7 @@ export function DataTable<
           mapResults: labels.mapResults,
           mapNoCoordinates: labels.mapNoCoordinates,
           errorLoading: labels.errorLoading,
+          mapCloseDetail: labels.mapCloseDetail,
         }}
         isBusy={busy}
         isError={isError}

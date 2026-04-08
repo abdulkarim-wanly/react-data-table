@@ -134,9 +134,9 @@ If you do **not** set `config.searchFields`, you can skip some keys; still provi
 
 The table ships with **plain defaults** (`DEFAULT_DATA_TABLE_CLASSNAMES`). Override only what you need via **`config.classNames`**, or swap whole regions with **`config.layoutComponents`**.
 
-**`config.classNames`** — partial map of regions (root, `headerCard`, `tableOuter`, `tableScroll`, `tableHeadCellSortable`, pagination, skeleton bars, map shell/cards, etc.). Import **`DEFAULT_DATA_TABLE_CLASSNAMES`** or **`mergeDataTableClassNames`** if you want to extend defaults in code.
+**`config.classNames`** — partial map of regions (root, `headerCard`, `tableOuter`, `tableScroll`, `tableHeadCellSortable`, pagination, skeleton bars, map regions such as `mapViewRoot`, `mapViewSplitGrid`, `mapFloatingBar`, `mapDetailPanel`, `mapDetailClose`, `mapCanvasShell`, `mapCard`, etc.). Import **`DEFAULT_DATA_TABLE_CLASSNAMES`** or **`mergeDataTableClassNames`** if you want to extend defaults in code.
 
-**`config.labels`** — strings for error/empty/pagination and built-in view mode labels. Default is English; pass values from **`t('…')`** if you use i18n.
+**`config.labels`** — strings for error/empty/pagination, built-in view mode labels, map strings (`mapResults`, `mapNoCoordinates`, `mapCloseDetail`), and more. Default is English; pass values from **`t('…')`** if you use i18n.
 
 **`config.layoutComponents`** — optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** components. Each receives **`classNames`** (the merged tokens for that region) and **`children`** (toolbar/shell). Use these when you need a **glass card**, sticky header chrome, or a **`PageHeader`** that matches the rest of your app.
 
@@ -248,13 +248,13 @@ const config: DataTableConfig<Row, Filters> = {
 
 ### Leaflet CSS (map view)
 
-If you use the built-in **map** view, import Leaflet’s CSS once in your app bootstrap (for correct tiles, controls, and popups):
+If you use the built-in **map** view, import Leaflet’s CSS once in your app bootstrap (for correct tiles, zoom controls, and map panes):
 
 ```ts
 import "leaflet/dist/leaflet.css";
 ```
 
-The default tiles are **OpenStreetMap**; no API key is required. Follow the [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/) for production traffic (attribution is included by default). You can point `views.map.tileLayerUrl` / `tileAttribution` at another raster provider if you prefer.
+The default tiles are **OpenStreetMap**; no API key is required. Follow the [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/) for production traffic (attribution is included by default). Heavy or hotlinked traffic may see blocked tiles; use your own tile proxy or set `views.map.tileLayerUrl` / `tileAttribution` to a provider you are entitled to use.
 
 ---
 
@@ -268,7 +268,7 @@ The default tiles are **OpenStreetMap**; no API key is required. Follow the [Ope
 | `autoRowActionsColumn` | Defaults to `true`; set `false` if you already render row actions in your own table column |
 | `actions` | **`TableAction<TRecord, TFilters>[]`** for toolbar buttons |
 | `views` | Optional built-in view mode config for `table`, `grid`, `list`, and `map` |
-| `views.map` | Map mode config: access token, coordinates extractor, sidebar card renderer, and optional popup/map options |
+| `views.map` | Map mode: `getCoordinates`, `renderCard`, optional `layout` (`full` \| `split`), `renderPopup` (split only), tiles, zoom, `sidebarTitle`, etc. |
 | `id` | Stable table id (default `"table"`); used in modal registry keys |
 | `queryKey` | Extra React Query key prefix; defaults to `[id]` |
 | `defaultPerPage` | Page size (default `10`) |
@@ -373,7 +373,7 @@ Exposed on toolbar actions, row actions, **`filtersUI`**, and **`renderFilters`*
 - **`table`** — the default column-based layout
 - **`grid`** — card/grid layout driven by your `renderGridItem`
 - **`list`** — stacked list layout driven by your `renderListItem`
-- **`map`** — split layout with a results sidebar and an interactive map (Leaflet + OpenStreetMap by default)
+- **`map`** — interactive map (Leaflet + OpenStreetMap by default). **Default `layout` is `full`:** map fills the area, markers per row, **`renderCard` opens as a bottom detail sheet** (same API as grid/list cards). Set `views.map.layout: "split"` for the legacy sidebar list + map.
 
 Grid, list, and map are intentionally renderer-driven because the library cannot safely guess how your record should appear outside the tabular column model.
 
@@ -431,40 +431,59 @@ Notes:
 - The user's last chosen view mode is persisted in `localStorage` by default using the table id.
 - Disable persistence with `views.persistMode = false`, or override the storage key with `views.storageKey`.
 - Customize toggle labels through `config.labels.viewAsTable`, `config.labels.viewAsGrid`, `config.labels.viewAsList`, and `config.labels.viewAsMap`.
+- Map-specific copy: `config.labels.mapResults`, `config.labels.mapNoCoordinates`, `config.labels.mapCloseDetail` (close control on the full-layout detail sheet).
 
 ### Map view details
 
-The built-in map view renders a two-panel layout:
+#### Layout: `full` (default)
 
-- left: scrollable result cards from `views.map.renderCard`
-- right: interactive Leaflet map (OpenStreetMap tiles by default) with markers for rows that return valid coordinates
+- The **map uses the full map region** (no sidebar list).
+- A **floating bar** shows `sidebarTitle` (or `labels.mapResults`) and the count of rows with valid coordinates.
+- **Markers** are drawn for every row where `getCoordinates` returns finite `lat` / `lng`.
+- **Tapping a marker** opens a **detail sheet** at the bottom that renders **`renderCard`** with the same **`DataTableMapItemRenderArgs`** as grid/list (`record`, `context`, `isActive`, `select`, `onOpenModal`, …). Because it is normal React, buttons, links, and row actions work inside the card.
+- **Dismiss** the sheet with the close control (`labels.mapCloseDetail`), by **clicking the map background**, or by choosing another marker.
+- The map container sets **`data-genesis-map-layout="full"`** for styling or tests.
 
-Use `views.map` to control it:
+#### Layout: `split` (legacy)
+
+- **Left:** scrollable list; each row is a button wrapping **`renderCard`** (synced with the active marker).
+- **Right:** the same Leaflet map and markers.
+- Optional **`renderPopup`** still renders **static HTML** inside a Leaflet popup (via `renderToStaticMarkup`). Prefer **`renderCard`** for rich UI; use `renderPopup` only for simple text/HTML in split mode.
 
 ```tsx
 views: {
   modes: ["table", "map"],
   map: {
+    // layout: "full" — default; omit or set layout: "split" for sidebar + map
     getCoordinates: (record) => ({ lat: record.lat, lng: record.lng }),
-    renderCard: ({ record, isActive, select }) => (
-      <button type="button" onClick={select} className={isActive ? "border-blue-500" : ""}>
-        {record.name}
-      </button>
+    renderCard: ({ record, context }) => (
+      <article className="rounded-xl border p-4">
+        <h3 className="font-semibold">{record.name}</h3>
+        <p className="text-sm text-muted-foreground">{record.city}</p>
+      </article>
     ),
-    renderPopup: ({ record }) => <div>{record.name}</div>,
     sidebarTitle: "Property locations",
     initialZoom: 10,
     fitBoundsPadding: 72,
     showNavigation: true,
+    // Split only — optional simple popup HTML:
+    // renderPopup: ({ record }) => <div>{record.name}</div>,
   },
 }
 ```
 
+**Styling** — override defaults with `config.classNames` / `mergeDataTableClassNames`, for example:
+
+- `mapViewRoot` — outer wrapper (`relative w-full` by default; in split mode, `mapViewSplitGrid` adds the two-column grid).
+- `mapFloatingBar`, `mapDetailPanel`, `mapDetailClose` — full-layout chrome and detail sheet.
+- `mapSidebar`, `mapSidebarHeader`, `mapSidebarList`, `mapCard`, `mapCardActive` — split layout only.
+- `mapCanvasShell`, `mapCanvas`, `mapEmptyState`, `mapPopup` — map surface, empty states, Leaflet popup class (split + `renderPopup`).
+
 Notes:
 
-- rows without valid `lat/lng` are skipped from marker rendering
-- card selection and marker selection stay in sync
-- the map view persists like the other view modes when `persistMode !== false`
+- Rows without valid coordinates are skipped for markers (and for the count in the floating bar).
+- In **split** mode, sidebar selection, marker selection, and optional popups stay in sync.
+- The map view persists like the other view modes when `persistMode !== false`.
 
 ---
 

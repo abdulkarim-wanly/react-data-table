@@ -50,8 +50,16 @@ export interface DataTableClassNames {
   listView: string;
   /** Wrapper around a single list item renderer */
   listItem: string;
-  /** Split layout wrapper for the map view */
+  /** Base wrapper for the map view (`layout: 'full'` or split grid root) */
   mapViewRoot: string;
+  /** Appended to `mapViewRoot` when `views.map.layout === 'split'` */
+  mapViewSplitGrid: string;
+  /** Top overlay on full-layout map (title + count) */
+  mapFloatingBar: string;
+  /** Detail sheet wrapper (full layout, marker selection) */
+  mapDetailPanel: string;
+  /** Close control for the detail sheet */
+  mapDetailClose: string;
   /** Left-hand results/sidebar panel in map view */
   mapSidebar: string;
   /** Optional title row above map view result cards */
@@ -106,14 +114,22 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   gridItem: '',
   listView: 'flex flex-col gap-3',
   listItem: '',
-  mapViewRoot: 'grid gap-4 xl:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]',
+  mapViewRoot: 'relative w-full',
+  mapViewSplitGrid: 'grid gap-4 xl:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]',
+  mapFloatingBar:
+    'absolute left-4 top-4 z-[1000] flex max-w-[min(100%,20rem)] items-center gap-3 rounded-xl border border-slate-200/80 bg-white/95 px-4 py-2.5 text-sm font-medium text-slate-800 shadow-lg backdrop-blur-sm',
+  mapDetailPanel:
+    'pointer-events-none absolute inset-x-0 bottom-0 z-[1000] flex justify-center px-4 pb-6 pt-16 bg-gradient-to-t from-slate-900/25 via-transparent to-transparent',
+  mapDetailClose:
+    'pointer-events-auto absolute -top-1 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 bg-white text-lg font-light text-slate-600 shadow-md transition hover:bg-slate-50 hover:text-slate-900',
   mapSidebar: 'flex min-h-[420px] flex-col rounded-2xl border border-slate-200/70 bg-white/80 p-3 shadow-sm backdrop-blur',
   mapSidebarHeader: 'mb-3 flex items-center justify-between gap-3 text-sm font-medium text-slate-700',
   mapSidebarList: 'flex flex-1 flex-col gap-3 overflow-auto pr-1',
   mapCard: 'rounded-xl border border-slate-200/70 bg-white p-4 shadow-sm transition',
   mapCardActive: 'border-blue-400 bg-blue-50/70 ring-2 ring-blue-200',
-  mapCanvasShell: 'relative min-h-[420px] overflow-hidden rounded-2xl border border-slate-200/70 bg-slate-100 shadow-sm',
-  mapCanvas: 'h-[640px] w-full',
+  mapCanvasShell:
+    'relative min-h-[min(72vh,720px)] w-full overflow-hidden rounded-2xl border border-slate-200/70 bg-slate-100 shadow-sm',
+  mapCanvas: 'h-[min(72vh,720px)] min-h-[420px] w-full',
   mapEmptyState: 'flex min-h-[240px] items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white/70 p-6 text-center text-sm text-slate-500',
   mapPopup: 'min-w-[180px]',
   pagination: 'flex items-center justify-between gap-3 text-sm mt-2',
@@ -140,6 +156,8 @@ export interface DataTableLabels {
   viewAsMap: string;
   mapResults: string;
   mapNoCoordinates: string;
+  /** Accessible label for the detail sheet close control (full layout) */
+  mapCloseDetail: string;
   pageLabel: string;
   ofLabel: string;
   itemsLabel: string;
@@ -163,6 +181,7 @@ export const DEFAULT_DATA_TABLE_LABELS: DataTableLabels = {
   viewAsMap: 'Map',
   mapResults: 'Locations',
   mapNoCoordinates: 'No items with valid map coordinates were found on this page.',
+  mapCloseDetail: 'Close details',
   pageLabel: 'Page',
   ofLabel: 'of',
   itemsLabel: 'items',

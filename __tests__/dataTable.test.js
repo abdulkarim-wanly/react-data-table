@@ -205,7 +205,7 @@ describe('DataTable view modes', () => {
     expect(html).not.toContain('Grid');
   });
 
-  test('renders the map view layout when map is the default mode', () => {
+  test('renders the map view layout when map is the default mode (split sidebar)', () => {
     const html = renderTable(
       {
         ...baseConfig,
@@ -213,6 +213,7 @@ describe('DataTable view modes', () => {
           modes: ['table', 'map'],
           defaultMode: 'map',
           map: {
+            layout: 'split',
             sidebarTitle: 'Property locations',
             getCoordinates: () => ({ lat: 33.3152, lng: 44.3661 }),
             renderCard: ({ record }) =>
@@ -225,6 +226,28 @@ describe('DataTable view modes', () => {
 
     expect(html).toContain('Property locations');
     expect(html).toContain('data-map-card="1"');
+    expect(html).not.toContain('<table');
+  });
+
+  test('renders full map layout without sidebar list until a marker is selected', () => {
+    const html = renderTable(
+      {
+        ...baseConfig,
+        views: {
+          modes: ['table', 'map'],
+          defaultMode: 'map',
+          map: {
+            getCoordinates: () => ({ lat: 33.3152, lng: 44.3661 }),
+            renderCard: ({ record }) =>
+              React.createElement('article', { 'data-map-card': record.id }, record.name),
+          },
+        },
+      },
+      { prefetchedData }
+    );
+
+    expect(html).toContain('data-genesis-map-layout="full"');
+    expect(html).not.toContain('data-map-card=');
     expect(html).not.toContain('<table');
   });
 
