@@ -134,9 +134,9 @@ If you do **not** set `config.searchFields`, you can skip some keys; still provi
 
 The table ships with **plain defaults** (`DEFAULT_DATA_TABLE_CLASSNAMES`). Override only what you need via **`config.classNames`**, or swap whole regions with **`config.layoutComponents`**.
 
-**`config.classNames`** — partial map of regions (root, `headerCard`, `tableOuter`, `tableScroll`, chrome toolbar tokens such as `tableBlock`, `toolbarShell`, `toolbarDropdown`, `toolbarFiltersDialogOverlay`, `toolbarFiltersDialogPanel`, `toolbarFiltersDialogBody`, `toolbarFiltersDialogFooter`, `tableOuterChrome`, legacy `viewModeToggle` / `viewModeButton`, map regions, pagination, etc.). Import **`DEFAULT_DATA_TABLE_CLASSNAMES`** or **`mergeDataTableClassNames`** if you want to extend defaults in code.
+**`config.classNames`** — partial map of regions (root, `headerCard`, `tableOuter`, `tableScroll`, chrome toolbar tokens such as `tableBlock`, `toolbarShell`, `toolbarDropdown`, `toolbarFiltersStrip`, `toolbarFiltersStripBody`, `tableOuterChrome`, legacy `viewModeToggle` / `viewModeButton`, map regions, pagination, etc.). Import **`DEFAULT_DATA_TABLE_CLASSNAMES`** or **`mergeDataTableClassNames`** if you want to extend defaults in code.
 
-**`config.labels`** — strings for error/empty/pagination, view mode labels, toolbar copy (`toolbarFilters`, `toolbarSort`, `toolbarView`, `toolbarRefresh`, `toolbarSortClear`, `toolbarFiltersDialogTitleLabel`, `toolbarResetFilters`, `toolbarFiltersDone`), map strings (`mapResults`, `mapNoCoordinates`), and more. Default is English; pass values from **`t('…')`** if you use i18n.
+**`config.labels`** — strings for error/empty/pagination, view mode labels, toolbar copy (`toolbarSort`, `toolbarView`, `toolbarRefresh`, `toolbarSortClear`, `toolbarFiltersDialogTitleLabel` for the inline filters strip heading, `toolbarResetFilters`), map strings (`mapResults`, `mapNoCoordinates`), and more. Default is English; pass values from **`t('…')`** if you use i18n.
 
 **`config.layoutComponents`** — optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** components. Each receives **`classNames`** (the merged tokens for that region) and **`children`** (toolbar/shell). Use these when you need a **glass card**, sticky header chrome, or a **`PageHeader`** that matches the rest of your app.
 
@@ -209,7 +209,7 @@ export function SettingsHeader() {
 }
 ```
 
-**Chrome toolbar (default)** — With **`config.chromeToolbar !== false`** (the default), **Filters** opens a **modal dialog** (backdrop click, **Done**, or **Escape** closes it). The dialog footer includes **Reset filters** (same as table **`resetFilters`**: clears filters and search) and **Done**. Put your filter fields in **`filtersUI`** / **`renderFilters`** only—avoid duplicating a clear action inside the form. **Sort** and **View** use elevated dropdowns; **Refresh** refetches data. The bar sits above the table inside **`tableBlock`**. Set **`chromeToolbar: false`** for the legacy light filters row and outline view buttons.
+**Chrome toolbar (default)** — With **`config.chromeToolbar !== false`** (the default), **`filtersUI`** / **`renderFilters`** output is shown **inline** in a light strip directly under the dark bar (hosted **`InlineFiltersUI`** / your render), with a **Reset filters** control in the strip header (table **`resetFilters`**). **Sort** and **View** use elevated dropdowns; **Refresh** refetches data. The chrome sits above the table inside **`tableBlock`**. Set **`chromeToolbar: false`** for the legacy light filters row and outline view buttons.
 
 ---
 
@@ -307,7 +307,7 @@ The default tiles are **OpenStreetMap**; no API key is required. Follow the [Ope
 | `classNames` | Partial **`DataTableClassNames`** — Tailwind (or any) classes per layout region; see **Styling** above |
 | `labels` | Partial **`DataTableLabels`** — error/empty/pagination copy |
 | `layoutComponents` | Optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** to replace default layout wrappers |
-| `chromeToolbar` | Default **`true`**: dark toolbar (filters, search, sort, view menu, refresh) above the table. Set **`false`** for the legacy filters row and outline view buttons |
+| `chromeToolbar` | Default **`true`**: dark toolbar (search, sort, view, refresh) with **inline filters strip** when `filtersUI` / `renderFilters` is set. Set **`false`** for the legacy filters row and outline view buttons |
 
 ### Pagination and `meta`
 

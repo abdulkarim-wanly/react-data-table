@@ -8,7 +8,7 @@ export type InlineFiltersRenderArgs<TRecord, TFilters extends FilterValues = Fil
   filters: MergedTableFilters<TFilters>;
   applyFilters: DataTableActionsContext<TRecord, TFilters>['applyFilters'];
   /**
-   * Same as the chrome toolbar dialog **Reset filters** button. Prefer that control when
+   * Same as the chrome toolbar strip **Reset filters** button. Prefer that control when
    * `chromeToolbar` is enabled so users are not shown duplicate clear actions.
    */
   resetFilters: DataTableActionsContext<TRecord, TFilters>['resetFilters'];

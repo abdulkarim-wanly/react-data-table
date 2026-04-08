@@ -104,17 +104,14 @@ export interface DataTableClassNames {
   toolbarDropdownAlignEnd: string;
   toolbarDropdownItem: string;
   toolbarDropdownItemActive: string;
-  /** Modal overlay (fixed, full screen) for the filters dialog. */
-  toolbarFiltersDialogOverlay: string;
-  /** Centered panel card. */
-  toolbarFiltersDialogPanel: string;
-  toolbarFiltersDialogHeader: string;
-  toolbarFiltersDialogTitle: string;
-  /** Scrollable filters form area. */
-  toolbarFiltersDialogBody: string;
-  toolbarFiltersDialogFooter: string;
-  toolbarFiltersDialogResetButton: string;
-  toolbarFiltersDialogDoneButton: string;
+  /** Inline filters region below the dark toolbar row (hosted `filtersUI` / `InlineFiltersUI`). */
+  toolbarFiltersStrip: string;
+  toolbarFiltersStripHeader: string;
+  toolbarFiltersStripTitle: string;
+  /** Hosted filters + default host mount here. */
+  toolbarFiltersStripBody: string;
+  /** Reset control in the strip header (same as table `resetFilters`). */
+  toolbarFiltersStripResetButton: string;
   toolbarSearchWrap: string;
   toolbarRefreshButton: string;
   /** Extra classes for search input in the chrome toolbar (contrast on dark bar). */
@@ -193,20 +190,15 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   toolbarDropdownItem:
     'flex w-full items-center px-3 py-2.5 text-left text-sm text-neutral-100 transition hover:bg-white/10',
   toolbarDropdownItemActive: 'bg-white/15 font-medium text-white',
-  toolbarFiltersDialogOverlay:
-    'fixed inset-0 z-[500] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]',
-  toolbarFiltersDialogPanel:
-    'flex max-h-[min(90vh,40rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-neutral-950',
-  toolbarFiltersDialogHeader:
-    'border-b border-neutral-200 px-4 py-3 dark:border-neutral-800',
-  toolbarFiltersDialogTitle: 'text-base font-semibold text-neutral-900 dark:text-neutral-100',
-  toolbarFiltersDialogBody: 'min-h-0 flex-1 overflow-y-auto px-4 py-4',
-  toolbarFiltersDialogFooter:
-    'flex flex-wrap items-center justify-end gap-2 border-t border-neutral-200 px-4 py-3 dark:border-neutral-800',
-  toolbarFiltersDialogResetButton:
-    'rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800',
-  toolbarFiltersDialogDoneButton:
-    'rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white',
+  toolbarFiltersStrip:
+    'border-t border-white/10 bg-white text-neutral-900 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100',
+  toolbarFiltersStripHeader:
+    'flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-4 py-2.5 dark:border-neutral-800',
+  toolbarFiltersStripTitle:
+    'flex items-center gap-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100',
+  toolbarFiltersStripBody: 'max-h-[min(50vh,28rem)] overflow-y-auto px-4 py-4',
+  toolbarFiltersStripResetButton:
+    'shrink-0 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800',
   toolbarSearchWrap: 'min-w-0 flex-1 max-w-md',
   toolbarRefreshButton:
     'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-100 transition hover:bg-white/10 disabled:opacity-50',
@@ -253,8 +245,6 @@ export interface DataTableLabels {
   toolbarFiltersDialogTitleLabel: string;
   /** Clears filters and search via table `resetFilters`. */
   toolbarResetFilters: string;
-  /** Closes the filters dialog. */
-  toolbarFiltersDone: string;
 }
 
 export const DEFAULT_DATA_TABLE_LABELS: DataTableLabels = {
@@ -283,7 +273,6 @@ export const DEFAULT_DATA_TABLE_LABELS: DataTableLabels = {
   toolbarSortClear: 'Clear sort',
   toolbarFiltersDialogTitleLabel: 'Filters',
   toolbarResetFilters: 'Reset filters',
-  toolbarFiltersDone: 'Done',
 };
 
 export function mergeDataTableLabels(partial?: Partial<DataTableLabels>): DataTableLabels {
