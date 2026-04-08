@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import type { SortingState } from '@tanstack/react-table';
 import {
   ArrowUpDown,
@@ -31,7 +32,14 @@ type ToolbarClassNames = Pick<
   | 'toolbarDropdownAlignEnd'
   | 'toolbarDropdownItem'
   | 'toolbarDropdownItemActive'
-  | 'toolbarFiltersBody'
+  | 'toolbarFiltersDialogOverlay'
+  | 'toolbarFiltersDialogPanel'
+  | 'toolbarFiltersDialogHeader'
+  | 'toolbarFiltersDialogTitle'
+  | 'toolbarFiltersDialogBody'
+  | 'toolbarFiltersDialogFooter'
+  | 'toolbarFiltersDialogResetButton'
+  | 'toolbarFiltersDialogDoneButton'
   | 'toolbarSearchWrap'
   | 'toolbarRefreshButton'
 >;
@@ -43,6 +51,9 @@ type ToolbarLabels = Pick<
   | 'toolbarView'
   | 'toolbarRefresh'
   | 'toolbarSortClear'
+  | 'toolbarFiltersDialogTitleLabel'
+  | 'toolbarResetFilters'
+  | 'toolbarFiltersDone'
   | 'viewAsTable'
   | 'viewAsGrid'
   | 'viewAsList'
@@ -52,9 +63,11 @@ type ToolbarLabels = Pick<
 export interface DataTableToolbarProps {
   classNames: ToolbarClassNames;
   labels: ToolbarLabels;
-  /** Inline filters UI (same as `filtersEl`); shown when the Filters panel is open. */
+  /** Filters UI rendered inside the modal body (no separate clear control from the library). */
   filtersPanel: React.ReactNode | null;
   hasFilters: boolean;
+  /** Wired to table `resetFilters` (clears filters + search). */
+  onResetFilters: () => void;
   searchSlot: React.ReactNode | null;
   sortColumns: { id: string; label: string }[];
   sorting: SortingState;
@@ -66,23 +79,23 @@ export interface DataTableToolbarProps {
   isRefreshing: boolean;
 }
 
-type OpenPanel = 'filters' | 'sort' | 'view' | null;
+type DropdownMenu = 'sort' | 'view' | null;
 
 function useCloseOnOutsideClick(
-  open: OpenPanel,
-  setOpen: React.Dispatch<React.SetStateAction<OpenPanel>>,
+  enabled: boolean,
+  onClose: () => void,
   containerRef: React.RefObject<HTMLElement | null>
 ) {
   React.useEffect(() => {
-    if (open == null) return;
+    if (!enabled) return;
     const onPointerDown = (event: PointerEvent) => {
       const el = containerRef.current;
       if (!el || !(event.target instanceof Node) || el.contains(event.target)) return;
-      setOpen(null);
+      onClose();
     };
     document.addEventListener('pointerdown', onPointerDown, true);
     return () => document.removeEventListener('pointerdown', onPointerDown, true);
-  }, [open, setOpen, containerRef]);
+  }, [enabled, onClose, containerRef]);
 }
 
 export function DataTableToolbar({
@@ -90,6 +103,7 @@ export function DataTableToolbar({
   labels,
   filtersPanel,
   hasFilters,
+  onResetFilters,
   searchSlot,
   sortColumns,
   sorting,
@@ -101,18 +115,54 @@ export function DataTableToolbar({
   isRefreshing,
 }: DataTableToolbarProps) {
   const shellRef = React.useRef<HTMLDivElement>(null);
-  const [openPanel, setOpenPanel] = React.useState<OpenPanel>(null);
+  const [menuOpen, setMenuOpen] = React.useState<DropdownMenu>(null);
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
+  const [portalReady, setPortalReady] = React.useState(false);
 
-  useCloseOnOutsideClick(openPanel, setOpenPanel, shellRef);
+  React.useEffect(() => {
+    setPortalReady(typeof document !== 'undefined');
+  }, []);
+
+  const closeDropdowns = React.useCallback(() => setMenuOpen(null), []);
+
+  useCloseOnOutsideClick(menuOpen !== null, closeDropdowns, shellRef);
+
+  React.useEffect(() => {
+    if (!filtersOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [filtersOpen]);
+
+  React.useEffect(() => {
+    if (!filtersOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setFiltersOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [filtersOpen]);
 
   const hasSort = sortColumns.length > 0;
   const hasViews = viewModes.length > 1;
-  const showFiltersBody = openPanel === 'filters' && hasFilters && filtersPanel;
 
   const currentSort = sorting[0];
 
-  const togglePanel = (key: Exclude<OpenPanel, null>) => {
-    setOpenPanel((prev) => (prev === key ? null : key));
+  const toggleFilters = () => {
+    setMenuOpen(null);
+    setFiltersOpen((open) => !open);
+  };
+
+  const toggleSortMenu = () => {
+    setFiltersOpen(false);
+    setMenuOpen((m) => (m === 'sort' ? null : 'sort'));
+  };
+
+  const toggleViewMenu = () => {
+    setFiltersOpen(false);
+    setMenuOpen((m) => (m === 'view' ? null : 'view'));
   };
 
   const handleSortColumn = (columnId: string) => {
@@ -124,162 +174,213 @@ export function DataTableToolbar({
       }
       return [{ id: columnId, desc: false }];
     });
-    setOpenPanel(null);
+    setMenuOpen(null);
   };
 
   const clearSort = () => {
     onSortingChange([]);
-    setOpenPanel(null);
+    setMenuOpen(null);
   };
 
-  return (
-    <div ref={shellRef} className={joinClasses(c.toolbarShell)}>
-      <div className={joinClasses(c.toolbarRow)}>
-        <div className={joinClasses(c.toolbarLeft)}>
-          {hasFilters ? (
-            <div className={joinClasses(c.toolbarMenuWrap)}>
-              <button
-                type="button"
-                className={joinClasses(
-                  c.toolbarMenuButton,
-                  openPanel === 'filters' ? c.toolbarMenuButtonOpen : ''
-                )}
-                aria-expanded={openPanel === 'filters'}
-                onClick={() => togglePanel('filters')}
-              >
-                <Filter className={joinClasses(c.toolbarMenuIcon)} aria-hidden />
-                <span className={joinClasses(c.toolbarMenuLabel)}>{labels.toolbarFilters}</span>
-              </button>
-            </div>
-          ) : null}
+  const closeFiltersDialog = () => setFiltersOpen(false);
 
-          {hasSort ? (
-            <div className={joinClasses(c.toolbarMenuWrap)}>
-              <button
-                type="button"
-                className={joinClasses(
-                  c.toolbarMenuButton,
-                  openPanel === 'sort' ? c.toolbarMenuButtonOpen : ''
-                )}
-                aria-expanded={openPanel === 'sort'}
-                onClick={() => togglePanel('sort')}
-              >
-                <ArrowUpDown className={joinClasses(c.toolbarMenuIcon)} aria-hidden />
-                <span className={joinClasses(c.toolbarMenuLabel)}>{labels.toolbarSort}</span>
-              </button>
-              {openPanel === 'sort' ? (
-                <div className={joinClasses(c.toolbarDropdown)} role="menu">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className={joinClasses(c.toolbarDropdownItem)}
-                    onClick={clearSort}
-                  >
-                    {labels.toolbarSortClear}
-                  </button>
-                  {sortColumns.map((col) => {
-                    const active = currentSort?.id === col.id;
-                    const dir = active ? (currentSort?.desc ? 'desc' : 'asc') : null;
-                    return (
-                      <button
-                        key={col.id}
-                        type="button"
-                        role="menuitem"
-                        className={joinClasses(
-                          c.toolbarDropdownItem,
-                          active ? c.toolbarDropdownItemActive : ''
-                        )}
-                        onClick={() => handleSortColumn(col.id)}
-                      >
-                        {col.label}
-                        {dir === 'asc' ? ' · ↑' : dir === 'desc' ? ' · ↓' : ''}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+  const handleResetFilters = () => {
+    onResetFilters();
+  };
 
-          {searchSlot ? (
-            <div className={joinClasses(c.toolbarSearchWrap)}>{searchSlot}</div>
-          ) : null}
+  const filtersDialog =
+    portalReady &&
+    filtersOpen &&
+    hasFilters &&
+    filtersPanel &&
+    createPortal(
+      <div
+        className={joinClasses(c.toolbarFiltersDialogOverlay)}
+        role="presentation"
+        onClick={closeFiltersDialog}
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="grdt-filters-dialog-title"
+          className={joinClasses(c.toolbarFiltersDialogPanel)}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className={joinClasses(c.toolbarFiltersDialogHeader)}>
+            <h2 id="grdt-filters-dialog-title" className={joinClasses(c.toolbarFiltersDialogTitle)}>
+              {labels.toolbarFiltersDialogTitleLabel}
+            </h2>
+          </div>
+          <div className={joinClasses(c.toolbarFiltersDialogBody)}>{filtersPanel}</div>
+          <div className={joinClasses(c.toolbarFiltersDialogFooter)}>
+            <button
+              type="button"
+              className={joinClasses(c.toolbarFiltersDialogResetButton)}
+              onClick={handleResetFilters}
+            >
+              {labels.toolbarResetFilters}
+            </button>
+            <button
+              type="button"
+              className={joinClasses(c.toolbarFiltersDialogDoneButton)}
+              onClick={closeFiltersDialog}
+            >
+              {labels.toolbarFiltersDone}
+            </button>
+          </div>
         </div>
+      </div>,
+      document.body
+    );
 
-        <div className={joinClasses(c.toolbarRight)}>
-          {hasViews ? (
-            <div className={joinClasses(c.toolbarMenuWrap)}>
-              <button
-                type="button"
-                className={joinClasses(
-                  c.toolbarMenuButton,
-                  openPanel === 'view' ? c.toolbarMenuButtonOpen : ''
-                )}
-                aria-expanded={openPanel === 'view'}
-                aria-haspopup="menu"
-                onClick={() => togglePanel('view')}
-              >
-                <SlidersHorizontal className={joinClasses(c.toolbarMenuIcon)} aria-hidden />
-                <span className={joinClasses(c.toolbarMenuLabel)}>{labels.toolbarView}</span>
-                <ChevronDown className={joinClasses(c.toolbarChevron)} aria-hidden />
-              </button>
-              {openPanel === 'view' ? (
-                <div
-                  className={joinClasses(c.toolbarDropdown, c.toolbarDropdownAlignEnd)}
-                  role="menu"
+  return (
+    <>
+      {filtersDialog}
+      <div ref={shellRef} className={joinClasses(c.toolbarShell)}>
+        <div className={joinClasses(c.toolbarRow)}>
+          <div className={joinClasses(c.toolbarLeft)}>
+            {hasFilters ? (
+              <div className={joinClasses(c.toolbarMenuWrap)}>
+                <button
+                  type="button"
+                  className={joinClasses(
+                    c.toolbarMenuButton,
+                    filtersOpen ? c.toolbarMenuButtonOpen : ''
+                  )}
+                  aria-expanded={filtersOpen}
+                  aria-haspopup="dialog"
+                  onClick={toggleFilters}
                 >
-                  {viewModes.map((mode) => {
-                    const label =
-                      mode === 'grid'
-                        ? labels.viewAsGrid
-                        : mode === 'list'
-                          ? labels.viewAsList
-                          : mode === 'map'
-                            ? labels.viewAsMap
-                            : labels.viewAsTable;
-                    const active = mode === currentViewMode;
-                    return (
-                      <button
-                        key={mode}
-                        type="button"
-                        role="menuitem"
-                        className={joinClasses(
-                          c.toolbarDropdownItem,
-                          active ? c.toolbarDropdownItemActive : ''
-                        )}
-                        onClick={() => {
-                          onViewMode(mode);
-                          setOpenPanel(null);
-                        }}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+                  <Filter className={joinClasses(c.toolbarMenuIcon)} aria-hidden />
+                  <span className={joinClasses(c.toolbarMenuLabel)}>{labels.toolbarFilters}</span>
+                </button>
+              </div>
+            ) : null}
 
-          <button
-            type="button"
-            className={joinClasses(c.toolbarRefreshButton)}
-            onClick={() => onRefresh()}
-            disabled={isRefreshing}
-            aria-busy={isRefreshing}
-          >
-            <RefreshCw
-              className={joinClasses(c.toolbarMenuIcon, isRefreshing ? 'animate-spin' : '')}
-              aria-hidden
-            />
-            <span className={joinClasses(c.toolbarMenuLabel)}>{labels.toolbarRefresh}</span>
-          </button>
+            {hasSort ? (
+              <div className={joinClasses(c.toolbarMenuWrap)}>
+                <button
+                  type="button"
+                  className={joinClasses(
+                    c.toolbarMenuButton,
+                    menuOpen === 'sort' ? c.toolbarMenuButtonOpen : ''
+                  )}
+                  aria-expanded={menuOpen === 'sort'}
+                  onClick={toggleSortMenu}
+                >
+                  <ArrowUpDown className={joinClasses(c.toolbarMenuIcon)} aria-hidden />
+                  <span className={joinClasses(c.toolbarMenuLabel)}>{labels.toolbarSort}</span>
+                </button>
+                {menuOpen === 'sort' ? (
+                  <div className={joinClasses(c.toolbarDropdown)} role="menu">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={joinClasses(c.toolbarDropdownItem)}
+                      onClick={clearSort}
+                    >
+                      {labels.toolbarSortClear}
+                    </button>
+                    {sortColumns.map((col) => {
+                      const active = currentSort?.id === col.id;
+                      const dir = active ? (currentSort?.desc ? 'desc' : 'asc') : null;
+                      return (
+                        <button
+                          key={col.id}
+                          type="button"
+                          role="menuitem"
+                          className={joinClasses(
+                            c.toolbarDropdownItem,
+                            active ? c.toolbarDropdownItemActive : ''
+                          )}
+                          onClick={() => handleSortColumn(col.id)}
+                        >
+                          {col.label}
+                          {dir === 'asc' ? ' · ↑' : dir === 'desc' ? ' · ↓' : ''}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {searchSlot ? (
+              <div className={joinClasses(c.toolbarSearchWrap)}>{searchSlot}</div>
+            ) : null}
+          </div>
+
+          <div className={joinClasses(c.toolbarRight)}>
+            {hasViews ? (
+              <div className={joinClasses(c.toolbarMenuWrap)}>
+                <button
+                  type="button"
+                  className={joinClasses(
+                    c.toolbarMenuButton,
+                    menuOpen === 'view' ? c.toolbarMenuButtonOpen : ''
+                  )}
+                  aria-expanded={menuOpen === 'view'}
+                  aria-haspopup="menu"
+                  onClick={toggleViewMenu}
+                >
+                  <SlidersHorizontal className={joinClasses(c.toolbarMenuIcon)} aria-hidden />
+                  <span className={joinClasses(c.toolbarMenuLabel)}>{labels.toolbarView}</span>
+                  <ChevronDown className={joinClasses(c.toolbarChevron)} aria-hidden />
+                </button>
+                {menuOpen === 'view' ? (
+                  <div
+                    className={joinClasses(c.toolbarDropdown, c.toolbarDropdownAlignEnd)}
+                    role="menu"
+                  >
+                    {viewModes.map((mode) => {
+                      const label =
+                        mode === 'grid'
+                          ? labels.viewAsGrid
+                          : mode === 'list'
+                            ? labels.viewAsList
+                            : mode === 'map'
+                              ? labels.viewAsMap
+                              : labels.viewAsTable;
+                      const active = mode === currentViewMode;
+                      return (
+                        <button
+                          key={mode}
+                          type="button"
+                          role="menuitem"
+                          className={joinClasses(
+                            c.toolbarDropdownItem,
+                            active ? c.toolbarDropdownItemActive : ''
+                          )}
+                          onClick={() => {
+                            onViewMode(mode);
+                            setMenuOpen(null);
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <button
+              type="button"
+              className={joinClasses(c.toolbarRefreshButton)}
+              onClick={() => onRefresh()}
+              disabled={isRefreshing}
+              aria-busy={isRefreshing}
+            >
+              <RefreshCw
+                className={joinClasses(c.toolbarMenuIcon, isRefreshing ? 'animate-spin' : '')}
+                aria-hidden
+              />
+              <span className={joinClasses(c.toolbarMenuLabel)}>{labels.toolbarRefresh}</span>
+            </button>
+          </div>
         </div>
       </div>
-
-      {showFiltersBody ? (
-        <div className={joinClasses(c.toolbarFiltersBody)}>{filtersPanel}</div>
-      ) : null}
-    </div>
+    </>
   );
 }

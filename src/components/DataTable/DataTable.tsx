@@ -763,7 +763,14 @@ export function DataTable<
         toolbarDropdownAlignEnd: c.toolbarDropdownAlignEnd,
         toolbarDropdownItem: c.toolbarDropdownItem,
         toolbarDropdownItemActive: c.toolbarDropdownItemActive,
-        toolbarFiltersBody: c.toolbarFiltersBody,
+        toolbarFiltersDialogOverlay: c.toolbarFiltersDialogOverlay,
+        toolbarFiltersDialogPanel: c.toolbarFiltersDialogPanel,
+        toolbarFiltersDialogHeader: c.toolbarFiltersDialogHeader,
+        toolbarFiltersDialogTitle: c.toolbarFiltersDialogTitle,
+        toolbarFiltersDialogBody: c.toolbarFiltersDialogBody,
+        toolbarFiltersDialogFooter: c.toolbarFiltersDialogFooter,
+        toolbarFiltersDialogResetButton: c.toolbarFiltersDialogResetButton,
+        toolbarFiltersDialogDoneButton: c.toolbarFiltersDialogDoneButton,
         toolbarSearchWrap: c.toolbarSearchWrap,
         toolbarRefreshButton: c.toolbarRefreshButton,
       }}
@@ -773,6 +780,9 @@ export function DataTable<
         toolbarView: labels.toolbarView,
         toolbarRefresh: labels.toolbarRefresh,
         toolbarSortClear: labels.toolbarSortClear,
+        toolbarFiltersDialogTitleLabel: labels.toolbarFiltersDialogTitleLabel,
+        toolbarResetFilters: labels.toolbarResetFilters,
+        toolbarFiltersDone: labels.toolbarFiltersDone,
         viewAsTable: labels.viewAsTable,
         viewAsGrid: labels.viewAsGrid,
         viewAsList: labels.viewAsList,
@@ -780,6 +790,9 @@ export function DataTable<
       }}
       filtersPanel={filtersEl}
       hasFilters={Boolean(filtersEl)}
+      onResetFilters={() => {
+        actionsContext.resetFilters();
+      }}
       searchSlot={searchEl}
       sortColumns={sortColumns}
       sorting={sorting}
