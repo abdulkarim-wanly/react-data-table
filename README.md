@@ -134,9 +134,9 @@ If you do **not** set `config.searchFields`, you can skip some keys; still provi
 
 The table ships with **plain defaults** (`DEFAULT_DATA_TABLE_CLASSNAMES`). Override only what you need via **`config.classNames`**, or swap whole regions with **`config.layoutComponents`**.
 
-**`config.classNames`** — partial map of regions (root, `headerCard`, `tableOuter`, `tableScroll`, `tableHeadCellSortable`, pagination, skeleton bars, map regions such as `mapViewRoot`, `mapViewSplitGrid`, `mapFloatingBar`, `mapDetailPanel`, `mapDetailClose`, `mapCanvasShell`, `mapCard`, etc.). Import **`DEFAULT_DATA_TABLE_CLASSNAMES`** or **`mergeDataTableClassNames`** if you want to extend defaults in code.
+**`config.classNames`** — partial map of regions (root, `headerCard`, `tableOuter`, `tableScroll`, chrome toolbar tokens such as `tableBlock`, `toolbarShell`, `toolbarRow`, `toolbarMenuButton`, `tableOuterChrome`, legacy `viewModeToggle` / `viewModeButton`, map regions, pagination, etc.). Import **`DEFAULT_DATA_TABLE_CLASSNAMES`** or **`mergeDataTableClassNames`** if you want to extend defaults in code.
 
-**`config.labels`** — strings for error/empty/pagination, built-in view mode labels, map strings (`mapResults`, `mapNoCoordinates`), and more. Default is English; pass values from **`t('…')`** if you use i18n.
+**`config.labels`** — strings for error/empty/pagination, view mode labels, toolbar copy (`toolbarFilters`, `toolbarSort`, `toolbarView`, `toolbarRefresh`, `toolbarSortClear`), map strings (`mapResults`, `mapNoCoordinates`), and more. Default is English; pass values from **`t('…')`** if you use i18n.
 
 **`config.layoutComponents`** — optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** components. Each receives **`classNames`** (the merged tokens for that region) and **`children`** (toolbar/shell). Use these when you need a **glass card**, sticky header chrome, or a **`PageHeader`** that matches the rest of your app.
 
@@ -186,7 +186,30 @@ function PageHeader({ title, subtitle, rightSlot, classNames }: DataTablePageHea
 <DataTable config={{ ...config, layoutComponents: { PageHeader } }} />;
 ```
 
-`PageHeader` receives **`rightSlot`** as the raw **`ActionButtonsBar`** (no extra wrapper) so you control alignment. The built-in header still wraps the bar in **`actionsWrapper`** when you do not supply **`PageHeader`**.
+`PageHeader` receives **`rightSlot`** as the raw **`ActionButtonsBar`**. When you omit **`layoutComponents.PageHeader`**, `DataTable` uses the exported **`DataTablePageHeader`**, which wraps **`rightSlot`** in **`actionsWrapper`** (same layout as the snippet above).
+
+**Standalone page header** — use the same block on non-table pages:
+
+```tsx
+import { DataTablePageHeader, mergeDataTableClassNames } from "genesis-react-data-table";
+
+const c = mergeDataTableClassNames({
+  headerCard: "flex flex-row items-start justify-between gap-4 w-full",
+});
+
+export function SettingsHeader() {
+  return (
+    <DataTablePageHeader
+      title="Settings"
+      subtitle="Manage your account"
+      rightSlot={<button type="button">Save</button>}
+      classNames={c}
+    />
+  );
+}
+```
+
+**Chrome toolbar (default)** — With **`config.chromeToolbar !== false`** (the default), filters, search, **Sort** (sortable columns), **View** (dropdown when multiple view modes exist), and **Refresh** sit in a dark bar above the table, inside a rounded **`tableBlock`** with the scroll region below. Set **`chromeToolbar: false`** to restore the older light filters row and outline view toggle buttons.
 
 ---
 
@@ -284,6 +307,7 @@ The default tiles are **OpenStreetMap**; no API key is required. Follow the [Ope
 | `classNames` | Partial **`DataTableClassNames`** — Tailwind (or any) classes per layout region; see **Styling** above |
 | `labels` | Partial **`DataTableLabels`** — error/empty/pagination copy |
 | `layoutComponents` | Optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** to replace default layout wrappers |
+| `chromeToolbar` | Default **`true`**: dark toolbar (filters, search, sort, view menu, refresh) above the table. Set **`false`** for the legacy filters row and outline view buttons |
 
 ### Pagination and `meta`
 
@@ -509,7 +533,7 @@ Wire **`onOpenModal`** on **`DataTable`** if actions return **`openModal`** payl
 
 ## Exports
 
-**Components:** `DataTable`, `ActionButtonsBar`, `UserActionCell`, `SearchInput`, `InlineFiltersUI`, `componentCell` (column helper).
+**Components:** `DataTable`, `DataTablePageHeader`, `DataTableToolbar`, `ActionButtonsBar`, `UserActionCell`, `SearchInput`, `InlineFiltersUI`, `componentCell` (column helper).
 
 **Registration:** `setDefaultDataTableFiltersHost` from **`genesis-react-data-table`** or **`genesis-react-data-table/setup`** — see **`filtersUI`** and **Vite** sections above.
 

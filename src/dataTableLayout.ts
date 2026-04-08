@@ -83,6 +83,33 @@ export interface DataTableClassNames {
   paginationMeta: string;
   paginationButtons: string;
   paginationButton: string;
+  /** Rounded shell wrapping chrome toolbar + table (`chromeToolbar` mode). */
+  tableBlock: string;
+  /** Table scroll outer when stacked below chrome toolbar (no top radius). */
+  tableOuterChrome: string;
+  /** Dark toolbar shell (rounded top when inside {@link tableBlock}). */
+  toolbarShell: string;
+  toolbarRow: string;
+  toolbarLeft: string;
+  toolbarRight: string;
+  /** `position: relative` wrapper for each menu trigger + dropdown. */
+  toolbarMenuWrap: string;
+  toolbarMenuButton: string;
+  /** Added when a menu trigger panel is open. */
+  toolbarMenuButtonOpen: string;
+  toolbarMenuLabel: string;
+  toolbarMenuIcon: string;
+  toolbarChevron: string;
+  toolbarDropdown: string;
+  toolbarDropdownAlignEnd: string;
+  toolbarDropdownItem: string;
+  toolbarDropdownItemActive: string;
+  /** Expanded filters region below the toolbar row. */
+  toolbarFiltersBody: string;
+  toolbarSearchWrap: string;
+  toolbarRefreshButton: string;
+  /** Extra classes for search input in the chrome toolbar (contrast on dark bar). */
+  toolbarSearchInput: string;
 }
 
 export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
@@ -137,6 +164,33 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   paginationMeta: 'text-muted-foreground',
   paginationButtons: 'flex items-center gap-2',
   paginationButton: '',
+  tableBlock:
+    'flex w-full max-w-full flex-col overflow-hidden rounded-2xl border border-neutral-800/90 bg-neutral-950/5 shadow-md dark:border-neutral-700/90',
+  tableOuterChrome: 'max-h-[min(70vh,720px)] min-h-0 flex-1 overflow-auto bg-white dark:bg-neutral-950',
+  toolbarShell: 'w-full shrink-0 border-b border-white/10 bg-gradient-to-b from-neutral-800/98 to-neutral-900/95 text-neutral-100',
+  toolbarRow: 'flex flex-wrap items-center justify-between gap-3 px-4 py-3',
+  toolbarLeft: 'flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3',
+  toolbarRight: 'flex shrink-0 flex-wrap items-center gap-2 sm:gap-3',
+  toolbarMenuWrap: 'relative',
+  toolbarMenuButton:
+    'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-100 transition hover:bg-white/10',
+  toolbarMenuButtonOpen: 'bg-white/10 ring-1 ring-white/20',
+  toolbarMenuLabel: '',
+  toolbarMenuIcon: 'h-4 w-4 shrink-0 opacity-90',
+  toolbarChevron: 'h-4 w-4 shrink-0 opacity-70',
+  toolbarDropdown:
+    'absolute left-0 top-full z-50 mt-1 min-w-[12rem] max-w-[min(100vw-2rem,20rem)] rounded-xl border border-neutral-700/90 bg-neutral-900 py-1 shadow-lg',
+  toolbarDropdownAlignEnd: 'left-auto right-0',
+  toolbarDropdownItem:
+    'flex w-full items-center px-3 py-2 text-left text-sm text-neutral-100 transition hover:bg-white/10',
+  toolbarDropdownItemActive: 'bg-white/15 font-medium text-white',
+  toolbarFiltersBody:
+    'border-t border-white/10 bg-white px-4 py-4 dark:bg-neutral-950 dark:text-neutral-100',
+  toolbarSearchWrap: 'min-w-0 flex-1 max-w-md',
+  toolbarRefreshButton:
+    'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-100 transition hover:bg-white/10 disabled:opacity-50',
+  toolbarSearchInput:
+    '[&_input]:border-neutral-300/80 [&_input]:bg-white/95 [&_input]:text-neutral-900 dark:[&_input]:border-neutral-600 [&_input]:placeholder:text-neutral-500',
 };
 
 export function mergeDataTableClassNames(
@@ -169,6 +223,11 @@ export interface DataTableLabels {
   emptyDataset: string;
   prev: string;
   next: string;
+  toolbarFilters: string;
+  toolbarSort: string;
+  toolbarView: string;
+  toolbarRefresh: string;
+  toolbarSortClear: string;
 }
 
 export const DEFAULT_DATA_TABLE_LABELS: DataTableLabels = {
@@ -190,6 +249,11 @@ export const DEFAULT_DATA_TABLE_LABELS: DataTableLabels = {
   emptyDataset: 'No items',
   prev: 'Previous',
   next: 'Next',
+  toolbarFilters: 'Filters',
+  toolbarSort: 'Sort',
+  toolbarView: 'View',
+  toolbarRefresh: 'Refresh',
+  toolbarSortClear: 'Clear sort',
 };
 
 export function mergeDataTableLabels(partial?: Partial<DataTableLabels>): DataTableLabels {

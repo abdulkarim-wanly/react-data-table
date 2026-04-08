@@ -6,6 +6,15 @@ export type { DataTableConfig, DataTableProps, DataTableViewsConfig } from './co
 export { DataTable } from './components/DataTable/DataTable';
 
 export type {
+  DataTablePageHeaderClassNames,
+  DataTablePageHeaderProps,
+} from './components/DataTablePageHeader/DataTablePageHeader';
+export { DataTablePageHeader } from './components/DataTablePageHeader/DataTablePageHeader';
+
+export type { DataTableToolbarProps } from './components/DataTableToolbar/DataTableToolbar';
+export { DataTableToolbar } from './components/DataTableToolbar/DataTableToolbar';
+
+export type {
   DataTableActionsContext,
   DataTableColumnDef,
   DataTableMapCoordinates,

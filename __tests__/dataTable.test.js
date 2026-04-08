@@ -137,9 +137,10 @@ describe('DataTable view modes', () => {
     meta: { total: 1, page: 1, perPage: 10 },
   };
 
-  test('renders view mode toggle buttons when multiple modes are enabled', () => {
+  test('renders view mode toggle buttons when multiple modes are enabled (legacy toolbar)', () => {
     const html = renderTable({
       ...baseConfig,
+      chromeToolbar: false,
       views: {
         modes: ['table', 'grid', 'list', 'map'],
         renderGridItem: ({ record }) => React.createElement('div', null, record.name),
@@ -155,6 +156,29 @@ describe('DataTable view modes', () => {
     expect(html).toContain('Grid');
     expect(html).toContain('List');
     expect(html).toContain('Map');
+  });
+
+  test('renders chrome toolbar with view menu and sort when multiple modes are enabled', () => {
+    const html = renderTable(
+      {
+        ...baseConfig,
+        views: {
+          modes: ['table', 'grid', 'list', 'map'],
+          renderGridItem: ({ record }) => React.createElement('div', null, record.name),
+          renderListItem: ({ record }) => React.createElement('div', null, record.name),
+          map: {
+            getCoordinates: () => ({ lat: 33.3152, lng: 44.3661 }),
+            renderCard: ({ record }) => React.createElement('div', null, record.name),
+          },
+        },
+      },
+      { prefetchedData }
+    );
+
+    expect(html).toContain('View');
+    expect(html).toContain('Sort');
+    expect(html).toContain('Refresh');
+    expect(html).toContain('rounded-2xl border border-neutral-800/90');
   });
 
   test('renders the grid renderer when grid is the default mode', () => {

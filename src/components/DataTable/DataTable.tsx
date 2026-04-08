@@ -28,6 +28,8 @@ import {
   type DataTableFiltersUISlot,
 } from "../InlineFiltersUI/InlineFiltersUI";
 import { MapView } from "../MapView/MapView";
+import { DataTablePageHeader } from "../DataTablePageHeader/DataTablePageHeader";
+import { DataTableToolbar } from "../DataTableToolbar/DataTableToolbar";
 import type {
   DataTableActionsContext,
   DataTableColumnDef,
@@ -218,6 +220,11 @@ export interface DataTableConfig<
    * Replace header, toolbar, or table shell with your own layout (glass cards, `PageHeader`, etc.).
    */
   layoutComponents?: DataTableLayoutComponents;
+  /**
+   * When `true` (default), filters, search, column sort, view mode, and refresh use a dark chrome toolbar
+   * above the table. When `false`, the previous light filters row and outline view toggle is used.
+   */
+  chromeToolbar?: boolean;
 }
 
 export interface DataTableViewsConfig<
@@ -634,29 +641,6 @@ export function DataTable<
         onOpenModal={config.onOpenModal}
       />
     ) : null;
-  const actionsWrapped = actionsBar ? (
-    <div className={joinClasses(c.actionsWrapper)}>{actionsBar}</div>
-  ) : null;
-
-  const defaultHeaderInner = (
-    <>
-      {config.pageHeader && (
-        <div className={joinClasses(c.pageHeaderWrapper)}>
-          {config.pageHeader.title && (
-            <h2 className={joinClasses(c.pageTitle)}>
-              {config.pageHeader.title}
-            </h2>
-          )}
-          {config.pageHeader.subtitle && (
-            <p className={joinClasses(c.pageSubtitle)}>
-              {config.pageHeader.subtitle}
-            </p>
-          )}
-        </div>
-      )}
-      {actionsWrapped}
-    </>
-  );
 
   const headerSection =
     hasHeaderBlock &&
@@ -674,7 +658,18 @@ export function DataTable<
         }}
       />
     ) : (
-      <div className={joinClasses(c.headerCard)}>{defaultHeaderInner}</div>
+      <DataTablePageHeader
+        title={config.pageHeader?.title}
+        subtitle={config.pageHeader?.subtitle}
+        rightSlot={actionsBar ?? undefined}
+        classNames={{
+          headerCard: c.headerCard,
+          pageHeaderWrapper: c.pageHeaderWrapper,
+          pageTitle: c.pageTitle,
+          pageSubtitle: c.pageSubtitle,
+          actionsWrapper: c.actionsWrapper,
+        }}
+      />
     ));
 
   const filtersEl =
@@ -684,6 +679,8 @@ export function DataTable<
       <InlineFiltersUI context={actionsContext} filtersUI={config.filtersUI} />
     ) : null;
 
+  const useChromeToolbar = config.chromeToolbar !== false;
+
   const searchEl =
     config.searchFields && config.searchFields.length > 0 ? (
       <div className={joinClasses(c.searchWrapper)}>
@@ -691,12 +688,15 @@ export function DataTable<
           searchFields={config.searchFields}
           value={searchValue}
           onChange={setSearchValue}
-          className={joinClasses(c.searchInput)}
+          className={joinClasses(
+            c.searchInput,
+            useChromeToolbar ? c.toolbarSearchInput : ""
+          )}
         />
       </div>
     ) : null;
 
-  const toolbarInner = (
+  const toolbarInnerLegacy = (
     <>
       {filtersEl}
       {searchEl}
@@ -732,14 +732,82 @@ export function DataTable<
     </>
   );
 
-  const toolbarSection =
-    (filtersEl || searchEl || availableViewModes.length > 1) &&
+  const sortColumns = React.useMemo(() => {
+    return table
+      .getAllColumns()
+      .filter((col) => col.getCanSort() && col.id)
+      .map((col) => {
+        const h = col.columnDef.header;
+        const label =
+          typeof h === "string" || typeof h === "number"
+            ? String(h)
+            : String(col.id);
+        return { id: String(col.id), label };
+      });
+  }, [table]);
+
+  const chromeToolbarEl = useChromeToolbar ? (
+    <DataTableToolbar
+      classNames={{
+        toolbarShell: c.toolbarShell,
+        toolbarRow: c.toolbarRow,
+        toolbarLeft: c.toolbarLeft,
+        toolbarRight: c.toolbarRight,
+        toolbarMenuWrap: c.toolbarMenuWrap,
+        toolbarMenuButton: c.toolbarMenuButton,
+        toolbarMenuButtonOpen: c.toolbarMenuButtonOpen,
+        toolbarMenuLabel: c.toolbarMenuLabel,
+        toolbarMenuIcon: c.toolbarMenuIcon,
+        toolbarChevron: c.toolbarChevron,
+        toolbarDropdown: c.toolbarDropdown,
+        toolbarDropdownAlignEnd: c.toolbarDropdownAlignEnd,
+        toolbarDropdownItem: c.toolbarDropdownItem,
+        toolbarDropdownItemActive: c.toolbarDropdownItemActive,
+        toolbarFiltersBody: c.toolbarFiltersBody,
+        toolbarSearchWrap: c.toolbarSearchWrap,
+        toolbarRefreshButton: c.toolbarRefreshButton,
+      }}
+      labels={{
+        toolbarFilters: labels.toolbarFilters,
+        toolbarSort: labels.toolbarSort,
+        toolbarView: labels.toolbarView,
+        toolbarRefresh: labels.toolbarRefresh,
+        toolbarSortClear: labels.toolbarSortClear,
+        viewAsTable: labels.viewAsTable,
+        viewAsGrid: labels.viewAsGrid,
+        viewAsList: labels.viewAsList,
+        viewAsMap: labels.viewAsMap,
+      }}
+      filtersPanel={filtersEl}
+      hasFilters={Boolean(filtersEl)}
+      searchSlot={searchEl}
+      sortColumns={sortColumns}
+      sorting={sorting}
+      onSortingChange={setSorting}
+      viewModes={availableViewModes}
+      currentViewMode={currentViewMode}
+      onViewMode={setViewMode}
+      onRefresh={() => {
+        void refetch();
+      }}
+      isRefreshing={isFetching}
+    />
+  ) : null;
+
+  const legacyToolbarVisible =
+    !useChromeToolbar &&
+    (filtersEl || searchEl || availableViewModes.length > 1);
+
+  const legacyToolbarSection =
+    legacyToolbarVisible &&
     (LC?.Toolbar ? (
       <LC.Toolbar classNames={{ filtersAndSearchRow: c.filtersAndSearchRow }}>
-        {toolbarInner}
+        {toolbarInnerLegacy}
       </LC.Toolbar>
     ) : (
-      <div className={joinClasses(c.filtersAndSearchRow)}>{toolbarInner}</div>
+      <div className={joinClasses(c.filtersAndSearchRow)}>
+        {toolbarInnerLegacy}
+      </div>
     ));
 
   const tableInner = (
@@ -925,21 +993,50 @@ export function DataTable<
       </div>
     );
 
+  const tableOuterToken = useChromeToolbar ? c.tableOuterChrome : c.tableOuter;
+
   const tableSection = LC?.TableShell ? (
     <LC.TableShell
-      classNames={{ tableOuter: c.tableOuter, tableScroll: c.tableScroll }}
+      classNames={{
+        tableOuter: tableOuterToken,
+        tableScroll: c.tableScroll,
+      }}
     >
       {collectionInner}
     </LC.TableShell>
   ) : (
-    <div className={joinClasses(c.tableOuter)}>{collectionInner}</div>
+    <div className={joinClasses(tableOuterToken)}>{collectionInner}</div>
+  );
+
+  const chromeStack =
+    useChromeToolbar &&
+    (LC?.Toolbar ? (
+      <LC.Toolbar
+        classNames={{
+          filtersAndSearchRow: joinClasses(c.tableBlock, "flex flex-col gap-0"),
+        }}
+      >
+        {chromeToolbarEl}
+        {tableSection}
+      </LC.Toolbar>
+    ) : (
+      <div className={joinClasses(c.tableBlock, "flex flex-col gap-0")}>
+        {chromeToolbarEl}
+        {tableSection}
+      </div>
+    ));
+
+  const classicStack = !useChromeToolbar && (
+    <>
+      {legacyToolbarSection}
+      {tableSection}
+    </>
   );
 
   return (
     <div className={joinClasses(c.root)}>
       {headerSection}
-      {toolbarSection}
-      {tableSection}
+      {chromeStack || classicStack}
       {showPagination && (
         <div className={joinClasses(c.pagination)}>
           <div className={joinClasses(c.paginationInfo)}>
