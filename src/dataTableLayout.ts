@@ -167,29 +167,30 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
     'flex w-full max-w-full flex-col overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950',
   tableOuterChrome: 'max-h-[min(70vh,720px)] min-h-0 flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950',
   toolbarShell:
-    'w-full shrink-0 border-b border-zinc-800 bg-zinc-950 text-zinc-100',
-  toolbarRow: 'flex flex-wrap items-center justify-between gap-3 px-4 py-2.5',
+    'w-full shrink-0 border-b border-slate-200/80 bg-white/90 text-slate-900 backdrop-blur supports-[backdrop-filter]:bg-white/80',
+  toolbarRow: 'flex flex-wrap items-center justify-between gap-3 px-4 py-3',
   toolbarLeft: 'flex min-w-0 flex-1 flex-wrap items-center gap-3',
   toolbarRight: 'flex shrink-0 flex-wrap items-center gap-2',
   toolbarMenuButton:
-    'inline-flex h-9 shrink-0 items-center gap-2 rounded-md border border-zinc-700/80 bg-zinc-900/50 px-3 text-sm font-medium text-zinc-100 shadow-sm outline-none transition-colors hover:bg-zinc-800 hover:text-white focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 data-[state=open]:border-zinc-600 data-[state=open]:bg-zinc-800',
-  toolbarMenuLabel: '',
-  toolbarMenuIcon: 'h-4 w-4 shrink-0 text-zinc-400',
-  toolbarChevron: 'h-4 w-4 shrink-0 text-zinc-500',
+    'inline-flex min-h-[2.75rem] shrink-0 items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3.5 py-2 text-sm font-medium text-slate-900 shadow-sm outline-none transition-all hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white data-[state=open]:border-slate-300 data-[state=open]:bg-slate-50',
+  toolbarMenuLabel: 'text-sm font-semibold text-slate-900',
+  toolbarMenuIcon: 'h-4 w-4 shrink-0 text-slate-500',
+  toolbarChevron:
+    'h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-data-[state=open]:rotate-180',
   toolbarDropdownMenuContent:
-    'border border-zinc-700 bg-zinc-900 text-zinc-100 shadow-xl ring-1 ring-black/40',
+    'rounded-xl border border-slate-200/80 bg-white/95 p-1.5 text-slate-900 shadow-2xl shadow-slate-900/10 backdrop-blur',
   toolbarDropdownMenuItem:
-    'text-zinc-200 data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50',
-  toolbarDropdownMenuItemActive: 'bg-zinc-800/90 font-medium text-white',
+    'gap-3 rounded-lg px-2.5 py-2.5 text-slate-700 data-[highlighted]:bg-slate-50 data-[highlighted]:text-slate-900',
+  toolbarDropdownMenuItemActive: 'bg-slate-50 font-medium text-slate-900',
   toolbarSearchFiltersCluster:
     'flex min-w-0 flex-1 flex-wrap items-center gap-3',
   toolbarFiltersBeside:
-    'min-w-0 flex-1 basis-full sm:basis-auto sm:max-w-[min(100%,36rem)] [&_input]:max-w-full [&_select]:max-w-full',
+    'min-w-0 flex-1 basis-full sm:basis-auto sm:max-w-[min(100%,38rem)] [&_input]:max-w-full [&_input]:rounded-xl [&_input]:border [&_input]:border-slate-200/80 [&_input]:bg-white [&_input]:shadow-sm [&_select]:max-w-full [&_select]:rounded-xl [&_select]:border [&_select]:border-slate-200/80 [&_select]:bg-white [&_select]:shadow-sm [&_button]:rounded-xl',
   toolbarSearchWrap: 'min-w-0 w-full max-w-sm sm:w-auto sm:max-w-md',
   toolbarRefreshButton:
-    'inline-flex h-9 items-center gap-2 rounded-md border border-transparent px-3 text-sm font-medium text-zinc-300 outline-none transition-colors hover:bg-zinc-800 hover:text-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:pointer-events-none disabled:opacity-40',
+    'inline-flex min-h-[2.75rem] items-center gap-3 rounded-xl border border-transparent bg-transparent px-3.5 py-2 text-sm font-medium text-slate-700 outline-none transition-all hover:border-slate-200/80 hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-50',
   toolbarSearchInput:
-    '[&_input]:border-neutral-300/80 [&_input]:bg-white/95 [&_input]:text-neutral-900 dark:[&_input]:border-neutral-600 [&_input]:placeholder:text-neutral-500',
+    '[&_input]:h-10 [&_input]:rounded-xl [&_input]:border [&_input]:border-slate-200/80 [&_input]:bg-white [&_input]:text-slate-900 [&_input]:shadow-sm [&_input]:placeholder:text-slate-400 [&_button]:text-slate-400 [&_button:hover]:text-slate-600',
 };
 
 export function mergeDataTableClassNames(

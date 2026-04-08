@@ -1,5 +1,14 @@
 import React from 'react';
-import { Check, ChevronDown, LayoutGrid, RefreshCw } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  Grid2x2,
+  LayoutList,
+  MapPinned,
+  RefreshCw,
+  Table2,
+  type LucideIcon,
+} from 'lucide-react';
 
 import type { DataTableClassNames, DataTableLabels } from '../../dataTableLayout';
 import type { DataTableViewMode } from '../../tableTypes';
@@ -57,14 +66,19 @@ export interface DataTableToolbarProps {
   isRefreshing: boolean;
 }
 
-function viewModeLabel(
+type ViewModeMeta = {
+  label: string;
+  Icon: LucideIcon;
+};
+
+function getViewModeMeta(
   mode: DataTableViewMode,
   labels: ToolbarLabels
-): string {
-  if (mode === 'grid') return labels.viewAsGrid;
-  if (mode === 'list') return labels.viewAsList;
-  if (mode === 'map') return labels.viewAsMap;
-  return labels.viewAsTable;
+): ViewModeMeta {
+  if (mode === 'grid') return { label: labels.viewAsGrid, Icon: Grid2x2 };
+  if (mode === 'list') return { label: labels.viewAsList, Icon: LayoutList };
+  if (mode === 'map') return { label: labels.viewAsMap, Icon: MapPinned };
+  return { label: labels.viewAsTable, Icon: Table2 };
 }
 
 export function DataTableToolbar({
@@ -81,6 +95,7 @@ export function DataTableToolbar({
 }: DataTableToolbarProps) {
   const hasViews = viewModes.length > 1;
   const showSearchFiltersCluster = Boolean(searchSlot || (hasFilters && filtersPanel));
+  const currentView = getViewModeMeta(currentViewMode, labels);
 
   return (
     <div className={joinClasses(c.toolbarShell)}>
@@ -102,9 +117,25 @@ export function DataTableToolbar({
           {hasViews ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button type="button" className={joinClasses(c.toolbarMenuButton)}>
-                  <LayoutGrid className={joinClasses(c.toolbarMenuIcon)} aria-hidden />
-                  <span className={joinClasses(c.toolbarMenuLabel)}>{labels.toolbarView}</span>
+                <button
+                  type="button"
+                  className={joinClasses(c.toolbarMenuButton, 'group')}
+                  aria-label={`${labels.toolbarView}: ${currentView.label}`}
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700 transition-colors group-hover:bg-white group-hover:text-slate-900">
+                    <currentView.Icon
+                      className={joinClasses(c.toolbarMenuIcon, 'text-current')}
+                      aria-hidden
+                    />
+                  </span>
+                  <span className="flex min-w-0 flex-col items-start leading-tight">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      {labels.toolbarView}
+                    </span>
+                    <span className={joinClasses(c.toolbarMenuLabel, 'truncate')}>
+                      {currentView.label}
+                    </span>
+                  </span>
                   <ChevronDown className={joinClasses(c.toolbarChevron)} aria-hidden />
                 </button>
               </DropdownMenuTrigger>
@@ -114,7 +145,7 @@ export function DataTableToolbar({
                 className={joinClasses(c.toolbarDropdownMenuContent)}
               >
                 {viewModes.map((mode) => {
-                  const label = viewModeLabel(mode, labels);
+                  const { label, Icon } = getViewModeMeta(mode, labels);
                   const active = mode === currentViewMode;
                   return (
                     <DropdownMenuItem
@@ -125,12 +156,20 @@ export function DataTableToolbar({
                       )}
                       onSelect={() => onViewMode(mode)}
                     >
-                      <span className="mr-2 flex h-4 w-4 shrink-0 items-center justify-center">
+                      <span
+                        className={joinClasses(
+                          'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent',
+                          active ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'
+                        )}
+                      >
+                        <Icon className="h-4 w-4" aria-hidden />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate">{label}</span>
+                      <span className="ml-2 flex h-4 w-4 shrink-0 items-center justify-center">
                         {active ? (
                           <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
                         ) : null}
                       </span>
-                      {label}
                     </DropdownMenuItem>
                   );
                 })}
@@ -145,10 +184,16 @@ export function DataTableToolbar({
             disabled={isRefreshing}
             aria-busy={isRefreshing}
           >
-            <RefreshCw
-              className={joinClasses(c.toolbarMenuIcon, isRefreshing ? 'animate-spin' : '')}
-              aria-hidden
-            />
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+              <RefreshCw
+                className={joinClasses(
+                  c.toolbarMenuIcon,
+                  'text-current',
+                  isRefreshing ? 'animate-spin' : ''
+                )}
+                aria-hidden
+              />
+            </span>
             <span className={joinClasses(c.toolbarMenuLabel)}>{labels.toolbarRefresh}</span>
           </button>
         </div>

@@ -210,7 +210,7 @@ export function SettingsHeader() {
 }
 ```
 
-**Chrome toolbar (default)** — With **`config.chromeToolbar !== false`** (the default), **`filtersUI`** / **`renderFilters`** output is shown **in the same toolbar row as the search field** (hosted **`InlineFiltersUI`** / your render). **View** uses a **Radix / shadcn-style** dropdown (`@radix-ui/react-dropdown-menu`); **Refresh** refetches data. There is **no** toolbar sort menu or **Reset filters** button on the bar (use your filter UI or **`context.resetFilters`**). The chrome sits above the table inside **`tableBlock`**. Set **`chromeToolbar: false`** for the legacy light filters row and outline view buttons.
+**Chrome toolbar (default)** — With **`config.chromeToolbar !== false`** (the default), **`filtersUI`** / **`renderFilters`** output is shown **in the same toolbar row as the search field** (hosted **`InlineFiltersUI`** / your render). **View** uses a polished **Radix / shadcn-style** dropdown (`@radix-ui/react-dropdown-menu`) that shows the active mode in the trigger; **Refresh** refetches data. There is **no** toolbar sort menu or **Reset filters** button on the bar (use your filter UI or **`context.resetFilters`**). The chrome sits above the table inside **`tableBlock`**. Set **`chromeToolbar: false`** for the legacy light filters row and outline view buttons.
 
 ---
 
@@ -308,7 +308,7 @@ The default tiles are **OpenStreetMap**; no API key is required. Follow the [Ope
 | `classNames` | Partial **`DataTableClassNames`** — Tailwind (or any) classes per layout region; see **Styling** above |
 | `labels` | Partial **`DataTableLabels`** — error/empty/pagination copy |
 | `layoutComponents` | Optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** to replace default layout wrappers |
-| `chromeToolbar` | Default **`true`**: dark toolbar (search, **View** dropdown, refresh) with **filters beside search** when `filtersUI` / `renderFilters` is set. Requires **`@radix-ui/react-dropdown-menu`**. Set **`false`** for the legacy filters row and outline view buttons |
+| `chromeToolbar` | Default **`true`**: professional chrome toolbar (search, **View** dropdown, refresh) with **filters beside search** when `filtersUI` / `renderFilters` is set. Requires **`@radix-ui/react-dropdown-menu`**. Set **`false`** for the legacy filters row and outline view buttons |
 
 ### Pagination and `meta`
 
@@ -590,5 +590,4 @@ npm test
 ## License
 
 MIT — see `LICENSE`.
-
 
