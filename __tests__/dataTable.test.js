@@ -158,7 +158,7 @@ describe('DataTable view modes', () => {
     expect(html).toContain('Map');
   });
 
-  test('renders chrome toolbar with view menu and sort when multiple modes are enabled', () => {
+  test('renders chrome toolbar with shadcn-style view menu when multiple modes are enabled', () => {
     const html = renderTable(
       {
         ...baseConfig,
@@ -176,9 +176,9 @@ describe('DataTable view modes', () => {
     );
 
     expect(html).toContain('View');
-    expect(html).toContain('Sort');
+    expect(html).not.toContain('Sort');
     expect(html).toContain('Refresh');
-    expect(html).toContain('rounded-2xl border border-neutral-800/90');
+    expect(html).toContain('rounded-xl border border-zinc-200/90');
   });
 
   test('renders the grid renderer when grid is the default mode', () => {

@@ -14,6 +14,7 @@ Configurable **React** data table built on [**TanStack Table**](https://tanstack
 | `@tanstack/react-table` | v8 |
 | `react-i18next` | >= 11 (e.g. 15.x is supported) + `i18next` |
 | `lucide-react` | >= 0.400 - icons used by the built-in search UI |
+| `@radix-ui/react-dropdown-menu` | v2 - chrome toolbar **View** menu (shadcn-style) |
 | `leaflet` | v1.9 when you use the built-in map view |
 
 ## Installation
@@ -50,7 +51,7 @@ npm install git+https://github.com/YOUR_ORG/YOUR_REPO.git
 Then add **peer dependencies** in the same project (npm does not always install peers for git deps):
 
 ```bash
-npm install @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react leaflet
+npm install @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react @radix-ui/react-dropdown-menu leaflet
 ```
 
 **Note:** The repo is set up so **`dist/`** is not required in Git — the first install runs **`npm run build`** via **`prepare`**. If you prefer faster installs and no build on the consumer machine, you can commit **`dist/`** and remove **`dist/`** from **`.gitignore`** (optional).
@@ -68,7 +69,7 @@ npm install @tanstack/react-query @tanstack/react-table react-i18next i18next lu
 ### From the npm registry (optional)
 
 ```bash
-npm install genesis-react-data-table @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react leaflet
+npm install genesis-react-data-table @tanstack/react-query @tanstack/react-table react-i18next i18next lucide-react @radix-ui/react-dropdown-menu leaflet
 ```
 
 If npm reports peer conflicts, align versions with the table above, or use `npm install --legacy-peer-deps` only as a last resort.
@@ -134,9 +135,9 @@ If you do **not** set `config.searchFields`, you can skip some keys; still provi
 
 The table ships with **plain defaults** (`DEFAULT_DATA_TABLE_CLASSNAMES`). Override only what you need via **`config.classNames`**, or swap whole regions with **`config.layoutComponents`**.
 
-**`config.classNames`** — partial map of regions (root, `headerCard`, `tableOuter`, `tableScroll`, chrome toolbar tokens such as `tableBlock`, `toolbarShell`, `toolbarDropdown`, `toolbarSearchFiltersCluster`, `toolbarFiltersBeside`, `toolbarFiltersBesideResetButton`, `tableOuterChrome`, legacy `viewModeToggle` / `viewModeButton`, map regions, pagination, etc.). Import **`DEFAULT_DATA_TABLE_CLASSNAMES`** or **`mergeDataTableClassNames`** if you want to extend defaults in code.
+**`config.classNames`** — partial map of regions (root, `headerCard`, `tableOuter`, `tableScroll`, chrome toolbar tokens such as `tableBlock`, `toolbarShell`, `toolbarDropdownMenuContent`, `toolbarDropdownMenuItem`, `toolbarSearchFiltersCluster`, `toolbarFiltersBeside`, `tableOuterChrome`, legacy `viewModeToggle` / `viewModeButton`, map regions, pagination, etc.). Import **`DEFAULT_DATA_TABLE_CLASSNAMES`** or **`mergeDataTableClassNames`** if you want to extend defaults in code.
 
-**`config.labels`** — strings for error/empty/pagination, view mode labels, toolbar copy (`toolbarSort`, `toolbarView`, `toolbarRefresh`, `toolbarSortClear`, `toolbarResetFilters`; `toolbarFiltersDialogTitleLabel` is reserved for future dialog use), map strings (`mapResults`, `mapNoCoordinates`), and more. Default is English; pass values from **`t('…')`** if you use i18n.
+**`config.labels`** — strings for error/empty/pagination, view mode labels, toolbar copy (`toolbarView`, `toolbarRefresh`; legacy keys like `toolbarSort` / `toolbarResetFilters` remain on **`DataTableLabels`** for i18n bundles but are unused by the chrome toolbar), map strings (`mapResults`, `mapNoCoordinates`), and more. Default is English; pass values from **`t('…')`** if you use i18n.
 
 **`config.layoutComponents`** — optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** components. Each receives **`classNames`** (the merged tokens for that region) and **`children`** (toolbar/shell). Use these when you need a **glass card**, sticky header chrome, or a **`PageHeader`** that matches the rest of your app.
 
@@ -209,7 +210,7 @@ export function SettingsHeader() {
 }
 ```
 
-**Chrome toolbar (default)** — With **`config.chromeToolbar !== false`** (the default), **`filtersUI`** / **`renderFilters`** output is shown **in the same toolbar row as the search field** (hosted **`InlineFiltersUI`** / your render), with a compact **Reset filters** button beside them (table **`resetFilters`**). **Sort** and **View** use elevated dropdowns; **Refresh** refetches data. The chrome sits above the table inside **`tableBlock`**. Set **`chromeToolbar: false`** for the legacy light filters row and outline view buttons.
+**Chrome toolbar (default)** — With **`config.chromeToolbar !== false`** (the default), **`filtersUI`** / **`renderFilters`** output is shown **in the same toolbar row as the search field** (hosted **`InlineFiltersUI`** / your render). **View** uses a **Radix / shadcn-style** dropdown (`@radix-ui/react-dropdown-menu`); **Refresh** refetches data. There is **no** toolbar sort menu or **Reset filters** button on the bar (use your filter UI or **`context.resetFilters`**). The chrome sits above the table inside **`tableBlock`**. Set **`chromeToolbar: false`** for the legacy light filters row and outline view buttons.
 
 ---
 
@@ -307,7 +308,7 @@ The default tiles are **OpenStreetMap**; no API key is required. Follow the [Ope
 | `classNames` | Partial **`DataTableClassNames`** — Tailwind (or any) classes per layout region; see **Styling** above |
 | `labels` | Partial **`DataTableLabels`** — error/empty/pagination copy |
 | `layoutComponents` | Optional **`PageHeader`**, **`Toolbar`**, **`TableShell`** to replace default layout wrappers |
-| `chromeToolbar` | Default **`true`**: dark toolbar (search, sort, view, refresh) with **filters beside search** in that row when `filtersUI` / `renderFilters` is set. Set **`false`** for the legacy filters row and outline view buttons |
+| `chromeToolbar` | Default **`true`**: dark toolbar (search, **View** dropdown, refresh) with **filters beside search** when `filtersUI` / `renderFilters` is set. Requires **`@radix-ui/react-dropdown-menu`**. Set **`false`** for the legacy filters row and outline view buttons |
 
 ### Pagination and `meta`
 

@@ -732,20 +732,6 @@ export function DataTable<
     </>
   );
 
-  const sortColumns = React.useMemo(() => {
-    return table
-      .getAllColumns()
-      .filter((col) => col.getCanSort() && col.id)
-      .map((col) => {
-        const h = col.columnDef.header;
-        const label =
-          typeof h === "string" || typeof h === "number"
-            ? String(h)
-            : String(col.id);
-        return { id: String(col.id), label };
-      });
-  }, [table]);
-
   const chromeToolbarEl = useChromeToolbar ? (
     <DataTableToolbar
       classNames={{
@@ -753,28 +739,21 @@ export function DataTable<
         toolbarRow: c.toolbarRow,
         toolbarLeft: c.toolbarLeft,
         toolbarRight: c.toolbarRight,
-        toolbarMenuWrap: c.toolbarMenuWrap,
         toolbarMenuButton: c.toolbarMenuButton,
-        toolbarMenuButtonOpen: c.toolbarMenuButtonOpen,
         toolbarMenuLabel: c.toolbarMenuLabel,
         toolbarMenuIcon: c.toolbarMenuIcon,
         toolbarChevron: c.toolbarChevron,
-        toolbarDropdown: c.toolbarDropdown,
-        toolbarDropdownAlignEnd: c.toolbarDropdownAlignEnd,
-        toolbarDropdownItem: c.toolbarDropdownItem,
-        toolbarDropdownItemActive: c.toolbarDropdownItemActive,
+        toolbarDropdownMenuContent: c.toolbarDropdownMenuContent,
+        toolbarDropdownMenuItem: c.toolbarDropdownMenuItem,
+        toolbarDropdownMenuItemActive: c.toolbarDropdownMenuItemActive,
         toolbarSearchFiltersCluster: c.toolbarSearchFiltersCluster,
         toolbarFiltersBeside: c.toolbarFiltersBeside,
-        toolbarFiltersBesideResetButton: c.toolbarFiltersBesideResetButton,
         toolbarSearchWrap: c.toolbarSearchWrap,
         toolbarRefreshButton: c.toolbarRefreshButton,
       }}
       labels={{
-        toolbarSort: labels.toolbarSort,
         toolbarView: labels.toolbarView,
         toolbarRefresh: labels.toolbarRefresh,
-        toolbarSortClear: labels.toolbarSortClear,
-        toolbarResetFilters: labels.toolbarResetFilters,
         viewAsTable: labels.viewAsTable,
         viewAsGrid: labels.viewAsGrid,
         viewAsList: labels.viewAsList,
@@ -782,13 +761,7 @@ export function DataTable<
       }}
       filtersPanel={filtersEl}
       hasFilters={Boolean(filtersEl)}
-      onResetFilters={() => {
-        actionsContext.resetFilters();
-      }}
       searchSlot={searchEl}
-      sortColumns={sortColumns}
-      sorting={sorting}
-      onSortingChange={setSorting}
       viewModes={availableViewModes}
       currentViewMode={currentViewMode}
       onViewMode={setViewMode}

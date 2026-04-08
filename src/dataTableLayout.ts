@@ -92,24 +92,19 @@ export interface DataTableClassNames {
   toolbarRow: string;
   toolbarLeft: string;
   toolbarRight: string;
-  /** `position: relative` wrapper for each menu trigger + dropdown. */
-  toolbarMenuWrap: string;
+  /** View menu trigger (Radix / shadcn-style dropdown). */
   toolbarMenuButton: string;
-  /** Added when a menu trigger panel is open. */
-  toolbarMenuButtonOpen: string;
   toolbarMenuLabel: string;
   toolbarMenuIcon: string;
   toolbarChevron: string;
-  toolbarDropdown: string;
-  toolbarDropdownAlignEnd: string;
-  toolbarDropdownItem: string;
-  toolbarDropdownItemActive: string;
+  /** Radix `DropdownMenuContent` (popover panel). */
+  toolbarDropdownMenuContent: string;
+  toolbarDropdownMenuItem: string;
+  toolbarDropdownMenuItemActive: string;
   /** Wraps search + hosted filters + reset in one row beside each other (chrome toolbar). */
   toolbarSearchFiltersCluster: string;
   /** Hosted `filtersUI` / `InlineFiltersUI` mount (next to search). */
   toolbarFiltersBeside: string;
-  /** Compact reset control on the dark bar (same as table `resetFilters`). */
-  toolbarFiltersBesideResetButton: string;
   toolbarSearchWrap: string;
   toolbarRefreshButton: string;
   /** Extra classes for search input in the chrome toolbar (contrast on dark bar). */
@@ -169,34 +164,30 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   paginationButtons: 'flex items-center gap-2',
   paginationButton: '',
   tableBlock:
-    'flex w-full max-w-full flex-col overflow-hidden rounded-2xl border border-neutral-800/90 bg-neutral-950/5 shadow-md dark:border-neutral-700/90',
-  tableOuterChrome: 'max-h-[min(70vh,720px)] min-h-0 flex-1 overflow-auto bg-white dark:bg-neutral-950',
-  toolbarShell: 'w-full shrink-0 border-b border-white/10 bg-gradient-to-b from-neutral-800/98 to-neutral-900/95 text-neutral-100',
-  toolbarRow: 'flex flex-wrap items-center justify-between gap-3 px-4 py-3',
-  toolbarLeft: 'flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3',
-  toolbarRight: 'flex shrink-0 flex-wrap items-center gap-2 sm:gap-3',
-  toolbarMenuWrap: 'relative',
+    'flex w-full max-w-full flex-col overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950',
+  tableOuterChrome: 'max-h-[min(70vh,720px)] min-h-0 flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950',
+  toolbarShell:
+    'w-full shrink-0 border-b border-zinc-800 bg-zinc-950 text-zinc-100',
+  toolbarRow: 'flex flex-wrap items-center justify-between gap-3 px-4 py-2.5',
+  toolbarLeft: 'flex min-w-0 flex-1 flex-wrap items-center gap-3',
+  toolbarRight: 'flex shrink-0 flex-wrap items-center gap-2',
   toolbarMenuButton:
-    'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-100 transition hover:bg-white/10',
-  toolbarMenuButtonOpen: 'bg-white/10 ring-1 ring-white/20',
+    'inline-flex h-9 shrink-0 items-center gap-2 rounded-md border border-zinc-700/80 bg-zinc-900/50 px-3 text-sm font-medium text-zinc-100 shadow-sm outline-none transition-colors hover:bg-zinc-800 hover:text-white focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 data-[state=open]:border-zinc-600 data-[state=open]:bg-zinc-800',
   toolbarMenuLabel: '',
-  toolbarMenuIcon: 'h-4 w-4 shrink-0 opacity-90',
-  toolbarChevron: 'h-4 w-4 shrink-0 opacity-70',
-  toolbarDropdown:
-    'absolute left-0 top-full z-[200] mt-1.5 min-w-[12rem] max-w-[min(100vw-2rem,20rem)] max-h-[min(60vh,22rem)] overflow-y-auto rounded-xl border border-neutral-600/90 bg-neutral-900 py-1.5 shadow-2xl ring-1 ring-black/30',
-  toolbarDropdownAlignEnd: 'left-auto right-0 origin-top-right',
-  toolbarDropdownItem:
-    'flex w-full items-center px-3 py-2.5 text-left text-sm text-neutral-100 transition hover:bg-white/10',
-  toolbarDropdownItemActive: 'bg-white/15 font-medium text-white',
+  toolbarMenuIcon: 'h-4 w-4 shrink-0 text-zinc-400',
+  toolbarChevron: 'h-4 w-4 shrink-0 text-zinc-500',
+  toolbarDropdownMenuContent:
+    'border border-zinc-700 bg-zinc-900 text-zinc-100 shadow-xl ring-1 ring-black/40',
+  toolbarDropdownMenuItem:
+    'text-zinc-200 data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50',
+  toolbarDropdownMenuItemActive: 'bg-zinc-800/90 font-medium text-white',
   toolbarSearchFiltersCluster:
-    'flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3',
+    'flex min-w-0 flex-1 flex-wrap items-center gap-3',
   toolbarFiltersBeside:
     'min-w-0 flex-1 basis-full sm:basis-auto sm:max-w-[min(100%,36rem)] [&_input]:max-w-full [&_select]:max-w-full',
-  toolbarFiltersBesideResetButton:
-    'shrink-0 rounded-lg border border-white/25 bg-white/5 px-3 py-2 text-sm font-medium text-neutral-100 transition hover:bg-white/10',
-  toolbarSearchWrap: 'min-w-0 w-full max-w-md sm:w-auto sm:max-w-md',
+  toolbarSearchWrap: 'min-w-0 w-full max-w-sm sm:w-auto sm:max-w-md',
   toolbarRefreshButton:
-    'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-100 transition hover:bg-white/10 disabled:opacity-50',
+    'inline-flex h-9 items-center gap-2 rounded-md border border-transparent px-3 text-sm font-medium text-zinc-300 outline-none transition-colors hover:bg-zinc-800 hover:text-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:pointer-events-none disabled:opacity-40',
   toolbarSearchInput:
     '[&_input]:border-neutral-300/80 [&_input]:bg-white/95 [&_input]:text-neutral-900 dark:[&_input]:border-neutral-600 [&_input]:placeholder:text-neutral-500',
 };
