@@ -1,8 +1,8 @@
-import React from 'react';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
-import { Search, X } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import React from "react";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Search, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function useDebouncedValue<T>(value: T, delay = 300): T {
   const [debouncedValue, setDebouncedValue] = React.useState(value);
@@ -51,20 +51,20 @@ export interface SearchInputProps {
  */
 export const SearchInput: React.FC<SearchInputProps> = ({
   searchFields = [],
-  value = '',
+  value = "",
   onChange,
   placeholder,
-  className = '',
+  className = "",
   hideLeadingIcon = false,
 }) => {
   const { t } = useTranslation();
-  const [searchValue, setSearchValue] = React.useState(value || '');
+  const [searchValue, setSearchValue] = React.useState(value || "");
   const debouncedSearch = useDebouncedValue(searchValue, 300);
 
   // Keep internal state in sync with external value prop
   React.useEffect(() => {
     if (value !== searchValue) {
-      setSearchValue(value || '');
+      setSearchValue(value || "");
     }
   }, [value]);
 
@@ -75,13 +75,13 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   }, [debouncedSearch]);
 
   const handleClear = React.useCallback(() => {
-    setSearchValue('');
-    onChange?.('');
+    setSearchValue("");
+    onChange?.("");
   }, [onChange]);
 
   const defaultPlaceholder = searchFields.length
-    ? t('home.table.searchPlaceholder', { fields: searchFields.join(', ') })
-    : t('home.table.search');
+    ? t("home.table.searchPlaceholder", { fields: searchFields.join(", ") })
+    : t("home.table.search");
 
   return (
     <div className={`relative flex items-center ${className}`}>
@@ -93,20 +93,8 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
         placeholder={placeholder || defaultPlaceholder}
-        className={hideLeadingIcon ? 'h-9 pl-3 pr-9' : 'h-9 pl-9 pr-9'}
+        className={hideLeadingIcon ? "h-9 pl-3 pr-9 border-none" : "h-9 pl-9 pr-9 border-none"}
       />
-      {searchValue && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="absolute right-1 h-7 w-7 p-0"
-          onClick={handleClear}
-          aria-label={t('home.table.clearSearch')}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      )}
     </div>
   );
 };
