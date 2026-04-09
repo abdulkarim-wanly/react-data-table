@@ -444,7 +444,7 @@ export function MapView<TRecord, TFilters extends FilterValues = FilterValues>({
 
   return (
     <div className={rootClass} data-genesis-map-layout={layout}>
-      {layout === 'full' && showMapCanvas ? (
+      {layout === 'full' ? (
         <div className={classNames.mapFloatingBar}>
           <span className="min-w-0 flex-1 truncate">{config.sidebarTitle ?? labels.mapResults}</span>
           <span

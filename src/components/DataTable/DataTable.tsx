@@ -774,7 +774,10 @@ export function DataTable<
 
   const legacyToolbarVisible =
     !useChromeToolbar &&
-    (filtersEl || searchEl || availableViewModes.length > 1);
+    (filtersEl ||
+      searchEl ||
+      availableViewModes.length > 1 ||
+      availableViewModes.includes('map'));
 
   const legacyToolbarSection =
     legacyToolbarVisible &&
