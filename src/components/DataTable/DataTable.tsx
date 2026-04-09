@@ -744,6 +744,8 @@ export function DataTable<
         toolbarDropdownMenuContent: c.toolbarDropdownMenuContent,
         toolbarDropdownMenuItem: c.toolbarDropdownMenuItem,
         toolbarDropdownMenuItemActive: c.toolbarDropdownMenuItemActive,
+        toolbarDropdownItemIconWrap: c.toolbarDropdownItemIconWrap,
+        toolbarDropdownItemIconWrapActive: c.toolbarDropdownItemIconWrapActive,
         toolbarSearchFiltersCluster: c.toolbarSearchFiltersCluster,
         toolbarFiltersBeside: c.toolbarFiltersBeside,
         toolbarSearchWrap: c.toolbarSearchWrap,
@@ -751,7 +753,9 @@ export function DataTable<
         toolbarSearchExpand: c.toolbarSearchExpand,
         toolbarSearchExpandOpen: c.toolbarSearchExpandOpen,
         toolbarSearchExpandClosed: c.toolbarSearchExpandClosed,
-        toolbarIconButton: c.toolbarIconButton,
+        toolbarButtonViewMode: c.toolbarButtonViewMode,
+        toolbarButtonSearchOpen: c.toolbarButtonSearchOpen,
+        toolbarButtonSearchClose: c.toolbarButtonSearchClose,
       }}
       labels={{
         toolbarView: labels.toolbarView,

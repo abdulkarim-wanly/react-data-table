@@ -411,6 +411,21 @@ const classNames = mergeDataTableClassNames({
 });
 ```
 
+### Chrome toolbar buttons (`chromeToolbar`)
+
+Style each control separately via `classNames`:
+
+| Key | Element |
+|-----|---------|
+| `toolbarButtonViewMode` | View mode dropdown trigger (icon) |
+| `toolbarRefreshButton` | Refresh (icon) |
+| `toolbarButtonSearchOpen` | Collapsed search (opens field) |
+| `toolbarButtonSearchClose` | Expanded search (closes field, joined to input) |
+| `toolbarDropdownItemIconWrap` | Icon box in each view menu row |
+| `toolbarDropdownItemIconWrapActive` | Added for the active view row’s icon box |
+
+Set **`toolbarIconButton`** once in a partial merge to reuse the same base classes for view, search open/close, and refresh (see `mergeDataTableClassNames` — it copies into the keys above unless you override them individually).
+
 ## 11. Labels
 
 Replace default English labels through `labels`.

@@ -125,6 +125,16 @@ export interface DataTableClassNames {
   toolbarSearchExpandClosed: string;
   /** Icon-only chrome controls (search toggle, view menu, refresh). */
   toolbarIconButton: string;
+  /** View mode dropdown trigger (`chromeToolbar`). Defaults match refresh-sized icon control. */
+  toolbarButtonViewMode: string;
+  /** Collapsed search: opens the search field. */
+  toolbarButtonSearchOpen: string;
+  /** Expanded search: left control that closes the field (visually joined to the input). */
+  toolbarButtonSearchClose: string;
+  /** Leading icon box inside each view mode dropdown row. */
+  toolbarDropdownItemIconWrap: string;
+  /** Appended to {@link toolbarDropdownItemIconWrap} for the active mode. */
+  toolbarDropdownItemIconWrapActive: string;
 }
 
 export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
@@ -212,12 +222,40 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   toolbarSearchExpandOpen: 'max-w-[min(100%,24rem)]',
   toolbarSearchExpandClosed: 'max-w-[2.75rem]',
   toolbarIconButton: TOOLBAR_ICON_CONTROL_MENU,
+  toolbarButtonViewMode: `${TOOLBAR_ICON_CONTROL_MENU} group`,
+  toolbarButtonSearchOpen: TOOLBAR_ICON_CONTROL,
+  toolbarButtonSearchClose: `${TOOLBAR_ICON_CONTROL} rounded-r-none border-r-0 focus-visible:z-10`,
+  toolbarDropdownItemIconWrap:
+    'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+  toolbarDropdownItemIconWrapActive:
+    'border-blue-200/80 bg-blue-50 text-blue-700 dark:border-blue-800/50 dark:bg-blue-950/40 dark:text-blue-200',
 };
 
 export function mergeDataTableClassNames(
   partial?: Partial<DataTableClassNames>
 ): DataTableClassNames {
-  return { ...DEFAULT_DATA_TABLE_CLASSNAMES, ...partial };
+  const merged: DataTableClassNames = {
+    ...DEFAULT_DATA_TABLE_CLASSNAMES,
+    ...partial,
+  };
+  const icon = partial?.toolbarIconButton;
+  if (icon) {
+    if (!partial?.toolbarButtonViewMode) {
+      merged.toolbarButtonViewMode = /\bgroup\b/.test(icon)
+        ? icon
+        : `${icon} group`;
+    }
+    if (!partial?.toolbarButtonSearchOpen) {
+      merged.toolbarButtonSearchOpen = icon;
+    }
+    if (!partial?.toolbarButtonSearchClose) {
+      merged.toolbarButtonSearchClose = `${icon} rounded-r-none border-r-0 focus-visible:z-10`;
+    }
+    if (!partial?.toolbarRefreshButton) {
+      merged.toolbarRefreshButton = icon;
+    }
+  }
+  return merged;
 }
 
 export interface DataTableLabels {

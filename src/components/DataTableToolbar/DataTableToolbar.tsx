@@ -33,6 +33,8 @@ type ToolbarClassNames = Pick<
   | 'toolbarDropdownMenuContent'
   | 'toolbarDropdownMenuItem'
   | 'toolbarDropdownMenuItemActive'
+  | 'toolbarDropdownItemIconWrap'
+  | 'toolbarDropdownItemIconWrapActive'
   | 'toolbarSearchFiltersCluster'
   | 'toolbarFiltersBeside'
   | 'toolbarSearchWrap'
@@ -40,7 +42,9 @@ type ToolbarClassNames = Pick<
   | 'toolbarSearchExpand'
   | 'toolbarSearchExpandOpen'
   | 'toolbarSearchExpandClosed'
-  | 'toolbarIconButton'
+  | 'toolbarButtonViewMode'
+  | 'toolbarButtonSearchOpen'
+  | 'toolbarButtonSearchClose'
 >;
 
 type ToolbarLabels = Pick<
@@ -156,10 +160,7 @@ export function DataTableToolbar({
         <div className="flex min-w-0 flex-1 items-center">
           <button
             type="button"
-            className={joinClasses(
-              c.toolbarIconButton,
-              'rounded-r-none border-r-0 focus-visible:z-10'
-            )}
+            className={joinClasses(c.toolbarButtonSearchClose)}
             onClick={() => setSearchOpen(false)}
             aria-label={labels.toolbarSearchClose}
           >
@@ -178,7 +179,7 @@ export function DataTableToolbar({
       ) : (
         <button
           type="button"
-          className={joinClasses(c.toolbarIconButton)}
+          className={joinClasses(c.toolbarButtonSearchOpen)}
           aria-expanded={false}
           aria-label={labels.toolbarSearchOpen}
           onClick={() => setSearchOpen(true)}
@@ -209,7 +210,7 @@ export function DataTableToolbar({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className={joinClasses(c.toolbarIconButton, 'group')}
+                  className={joinClasses(c.toolbarButtonViewMode)}
                   aria-label={`${labels.toolbarView}: ${currentView.label}`}
                 >
                   <currentView.Icon
@@ -237,8 +238,8 @@ export function DataTableToolbar({
                     >
                       <span
                         className={joinClasses(
-                          'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent',
-                          active ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'
+                          c.toolbarDropdownItemIconWrap,
+                          active ? c.toolbarDropdownItemIconWrapActive : ''
                         )}
                       >
                         <Icon className="h-4 w-4" aria-hidden />
