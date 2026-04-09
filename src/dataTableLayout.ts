@@ -1,6 +1,16 @@
 import type { ReactNode } from 'react';
 
 /**
+ * Shared chrome toolbar icon control (refresh, view trigger, search toggle, expand shell).
+ * Uses `bg-background` / `text-foreground` for shadcn-style themes; override via `classNames` if needed.
+ */
+const TOOLBAR_ICON_CONTROL =
+  'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-background/40 text-foreground shadow-sm outline-none transition-colors hover:bg-background/60 focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50';
+
+const TOOLBAR_ICON_CONTROL_MENU =
+  `${TOOLBAR_ICON_CONTROL} data-[state=open]:border-white/20 data-[state=open]:bg-background/55`;
+
+/**
  * Tailwind (or any) classes for each layout region. Override only the keys you need;
  * omitted keys keep {@link DEFAULT_DATA_TABLE_CLASSNAMES}.
  */
@@ -174,36 +184,34 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   tableOuterChrome:
     'relative z-0 isolate max-h-[min(70vh,720px)] min-h-0 flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950',
   toolbarShell:
-    'relative z-10 w-full shrink-0 border-b border-slate-200/80 bg-white/90 text-slate-900 backdrop-blur supports-[backdrop-filter]:bg-white/80',
-  toolbarRow: 'flex flex-wrap items-center justify-between gap-3 px-4 py-3',
-  toolbarLeft: 'flex min-w-0 flex-1 flex-wrap items-center gap-3',
+    'relative z-10 w-full shrink-0 border-b border-white/10 bg-background/30 text-foreground backdrop-blur',
+  toolbarRow: 'flex flex-wrap items-center justify-between gap-3 px-3 py-2 md:px-4 md:py-3',
+  toolbarLeft: 'flex min-w-0 flex-1 flex-wrap items-center gap-2',
   toolbarRight: 'flex shrink-0 flex-wrap items-center gap-2',
-  toolbarMenuButton:
-    'inline-flex min-h-[2.75rem] shrink-0 items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3.5 py-2 text-sm font-medium text-slate-900 shadow-sm outline-none transition-all hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white data-[state=open]:border-slate-300 data-[state=open]:bg-slate-50',
-  toolbarMenuLabel: 'text-sm font-semibold text-slate-900',
-  toolbarMenuIcon: 'h-4 w-4 shrink-0 text-slate-500',
+  /** Same footprint as {@link toolbarRefreshButton} (icon-only square). */
+  toolbarMenuButton: TOOLBAR_ICON_CONTROL_MENU,
+  toolbarMenuLabel: 'text-sm font-semibold text-foreground',
+  toolbarMenuIcon: 'h-4 w-4 shrink-0 text-foreground/70',
   toolbarChevron:
-    'h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-data-[state=open]:rotate-180',
+    'h-4 w-4 shrink-0 text-foreground/50 transition-transform duration-200 group-data-[state=open]:rotate-180',
   toolbarDropdownMenuContent:
-    'rounded-xl border border-slate-200/80 bg-white/95 p-1.5 text-slate-900 shadow-2xl shadow-slate-900/10 backdrop-blur',
+    'min-w-40 rounded-xl border border-white/10 bg-background/95 p-1.5 text-foreground shadow-lg backdrop-blur',
   toolbarDropdownMenuItem:
-    'gap-3 rounded-lg px-2.5 py-2.5 text-slate-700 data-[highlighted]:bg-slate-50 data-[highlighted]:text-slate-900',
-  toolbarDropdownMenuItemActive: 'bg-slate-50 font-medium text-slate-900',
+    'gap-3 rounded-lg px-2.5 py-2 text-sm text-foreground/90 outline-none data-[highlighted]:bg-background/40 data-[highlighted]:text-foreground',
+  toolbarDropdownMenuItemActive: 'bg-background/30 font-medium text-foreground',
   toolbarSearchFiltersCluster:
-    'flex min-w-0 flex-1 flex-wrap items-center gap-3',
+    'flex min-w-0 flex-1 flex-wrap items-center gap-2',
   toolbarFiltersBeside:
-    'min-w-0 flex-1 basis-full sm:basis-auto sm:max-w-[min(100%,38rem)] [&_input]:max-w-full [&_input]:rounded-xl [&_input]:border [&_input]:border-slate-200/80 [&_input]:bg-white [&_input]:shadow-sm [&_select]:max-w-full [&_select]:rounded-xl [&_select]:border [&_select]:border-slate-200/80 [&_select]:bg-white [&_select]:shadow-sm [&_button]:rounded-xl',
+    'shrink-0 min-w-0 flex-1 basis-full sm:basis-auto sm:max-w-[min(100%,38rem)] [&_input]:max-w-full [&_input]:rounded-xl [&_input]:border [&_input]:border-white/10 [&_input]:bg-background/40 [&_input]:text-foreground [&_input]:shadow-sm [&_input]:placeholder:text-foreground/40 [&_select]:max-w-full [&_select]:rounded-xl [&_select]:border [&_select]:border-white/10 [&_select]:bg-background/40 [&_select]:text-foreground [&_button]:rounded-xl',
   toolbarSearchWrap: 'min-w-0 w-full max-w-sm sm:w-auto sm:max-w-md',
-  toolbarRefreshButton:
-    'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-700 shadow-sm outline-none transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-50',
+  toolbarRefreshButton: TOOLBAR_ICON_CONTROL,
   toolbarSearchInput:
-    '[&_input]:h-10 [&_input]:rounded-xl [&_input]:border [&_input]:border-slate-200/80 [&_input]:bg-white [&_input]:text-slate-900 [&_input]:shadow-sm [&_input]:placeholder:text-slate-400 [&_button]:text-slate-400 [&_button:hover]:text-slate-600',
+    '[&_input]:h-10 [&_input]:rounded-xl [&_input]:border [&_input]:border-white/10 [&_input]:bg-background/40 [&_input]:text-foreground [&_input]:shadow-sm [&_input]:placeholder:text-foreground/40 [&_button]:text-foreground/50 [&_button:hover]:text-foreground/80',
   toolbarSearchExpand:
-    'flex h-11 shrink-0 items-center overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-[max-width] duration-300 ease-out motion-reduce:transition-none',
+    'flex h-11 shrink-0 items-center overflow-hidden rounded-xl border border-white/10 bg-background/40 shadow-sm transition-[max-width] duration-300 ease-out motion-reduce:transition-none',
   toolbarSearchExpandOpen: 'max-w-[min(100%,24rem)]',
   toolbarSearchExpandClosed: 'max-w-[2.75rem]',
-  toolbarIconButton:
-    'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-700 shadow-sm outline-none transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white data-[state=open]:border-slate-300 data-[state=open]:bg-slate-50',
+  toolbarIconButton: TOOLBAR_ICON_CONTROL_MENU,
 };
 
 export function mergeDataTableClassNames(
