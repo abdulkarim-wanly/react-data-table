@@ -1,11 +1,11 @@
 import React from 'react';
 import {
   Check,
-  ChevronDown,
   Grid2x2,
   LayoutList,
   MapPinned,
   RefreshCw,
+  Search,
   Table2,
   type LucideIcon,
 } from 'lucide-react';
@@ -29,10 +29,7 @@ type ToolbarClassNames = Pick<
   | 'toolbarRow'
   | 'toolbarLeft'
   | 'toolbarRight'
-  | 'toolbarMenuButton'
-  | 'toolbarMenuLabel'
   | 'toolbarMenuIcon'
-  | 'toolbarChevron'
   | 'toolbarDropdownMenuContent'
   | 'toolbarDropdownMenuItem'
   | 'toolbarDropdownMenuItemActive'
@@ -40,12 +37,18 @@ type ToolbarClassNames = Pick<
   | 'toolbarFiltersBeside'
   | 'toolbarSearchWrap'
   | 'toolbarRefreshButton'
+  | 'toolbarSearchExpand'
+  | 'toolbarSearchExpandOpen'
+  | 'toolbarSearchExpandClosed'
+  | 'toolbarIconButton'
 >;
 
 type ToolbarLabels = Pick<
   DataTableLabels,
   | 'toolbarView'
   | 'toolbarRefresh'
+  | 'toolbarSearchOpen'
+  | 'toolbarSearchClose'
   | 'viewAsTable'
   | 'viewAsGrid'
   | 'viewAsList'
@@ -59,6 +62,8 @@ export interface DataTableToolbarProps {
   filtersPanel: React.ReactNode | null;
   hasFilters: boolean;
   searchSlot: React.ReactNode | null;
+  /** Opens the chrome search field when the table already has a query (e.g. URL). */
+  searchHasValue?: boolean;
   viewModes: DataTableViewMode[];
   currentViewMode: DataTableViewMode;
   onViewMode: (mode: DataTableViewMode) => void;
@@ -87,6 +92,7 @@ export function DataTableToolbar({
   filtersPanel,
   hasFilters,
   searchSlot,
+  searchHasValue = false,
   viewModes,
   currentViewMode,
   onViewMode,
@@ -94,8 +100,94 @@ export function DataTableToolbar({
   isRefreshing,
 }: DataTableToolbarProps) {
   const hasViews = viewModes.length > 1;
+  const [searchOpen, setSearchOpen] = React.useState(() => searchHasValue);
+
+  React.useEffect(() => {
+    if (searchHasValue) setSearchOpen(true);
+  }, [searchHasValue]);
+
+  const searchShellRef = React.useRef<HTMLDivElement>(null);
+  const searchInputMountRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!searchOpen) return;
+    const id = window.requestAnimationFrame(() => {
+      const input = searchInputMountRef.current?.querySelector<HTMLInputElement>('input');
+      input?.focus();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [searchOpen]);
+
+  React.useEffect(() => {
+    if (!searchOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (searchShellRef.current?.contains(e.target as Node)) return;
+      setSearchOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [searchOpen]);
+
+  React.useEffect(() => {
+    if (!searchOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setSearchOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [searchOpen]);
+
   const showSearchFiltersCluster = Boolean(searchSlot || (hasFilters && filtersPanel));
   const currentView = getViewModeMeta(currentViewMode, labels);
+
+  const searchExpandable = searchSlot ? (
+    <div
+      ref={searchShellRef}
+      className={joinClasses(
+        c.toolbarSearchExpand,
+        searchOpen ? c.toolbarSearchExpandOpen : c.toolbarSearchExpandClosed,
+        !searchOpen && 'justify-center'
+      )}
+    >
+      {searchOpen ? (
+        <div className="flex min-w-0 flex-1 items-center">
+          <button
+            type="button"
+            className={joinClasses(
+              c.toolbarIconButton,
+              'rounded-r-none border-r-0 focus-visible:z-10'
+            )}
+            onClick={() => setSearchOpen(false)}
+            aria-label={labels.toolbarSearchClose}
+          >
+            <Search className={joinClasses(c.toolbarMenuIcon, 'text-current')} aria-hidden />
+          </button>
+          <div
+            ref={searchInputMountRef}
+            className={joinClasses(
+              c.toolbarSearchWrap,
+              'min-w-0 flex-1 pr-2 [&_input]:rounded-l-none'
+            )}
+          >
+            {searchSlot}
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className={joinClasses(c.toolbarIconButton)}
+          aria-expanded={false}
+          aria-label={labels.toolbarSearchOpen}
+          onClick={() => setSearchOpen(true)}
+        >
+          <Search className={joinClasses(c.toolbarMenuIcon, 'text-current')} aria-hidden />
+        </button>
+      )}
+    </div>
+  ) : null;
 
   return (
     <div className={joinClasses(c.toolbarShell)}>
@@ -103,9 +195,7 @@ export function DataTableToolbar({
         <div className={joinClasses(c.toolbarLeft)}>
           {showSearchFiltersCluster ? (
             <div className={joinClasses(c.toolbarSearchFiltersCluster)}>
-              {searchSlot ? (
-                <div className={joinClasses(c.toolbarSearchWrap)}>{searchSlot}</div>
-              ) : null}
+              {searchExpandable}
               {hasFilters && filtersPanel ? (
                 <div className={joinClasses(c.toolbarFiltersBeside)}>{filtersPanel}</div>
               ) : null}
@@ -119,24 +209,13 @@ export function DataTableToolbar({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className={joinClasses(c.toolbarMenuButton, 'group')}
+                  className={joinClasses(c.toolbarIconButton, 'group')}
                   aria-label={`${labels.toolbarView}: ${currentView.label}`}
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700 transition-colors group-hover:bg-white group-hover:text-slate-900">
-                    <currentView.Icon
-                      className={joinClasses(c.toolbarMenuIcon, 'text-current')}
-                      aria-hidden
-                    />
-                  </span>
-                  <span className="flex min-w-0 flex-col items-start leading-tight">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      {labels.toolbarView}
-                    </span>
-                    <span className={joinClasses(c.toolbarMenuLabel, 'truncate')}>
-                      {currentView.label}
-                    </span>
-                  </span>
-                  <ChevronDown className={joinClasses(c.toolbarChevron)} aria-hidden />
+                  <currentView.Icon
+                    className={joinClasses(c.toolbarMenuIcon, 'text-current')}
+                    aria-hidden
+                  />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -183,18 +262,16 @@ export function DataTableToolbar({
             onClick={() => onRefresh()}
             disabled={isRefreshing}
             aria-busy={isRefreshing}
+            aria-label={labels.toolbarRefresh}
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
-              <RefreshCw
-                className={joinClasses(
-                  c.toolbarMenuIcon,
-                  'text-current',
-                  isRefreshing ? 'animate-spin' : ''
-                )}
-                aria-hidden
-              />
-            </span>
-            <span className={joinClasses(c.toolbarMenuLabel)}>{labels.toolbarRefresh}</span>
+            <RefreshCw
+              className={joinClasses(
+                c.toolbarMenuIcon,
+                'text-current',
+                isRefreshing ? 'animate-spin' : ''
+              )}
+              aria-hidden
+            />
           </button>
         </div>
       </div>

@@ -109,6 +109,12 @@ export interface DataTableClassNames {
   toolbarRefreshButton: string;
   /** Extra classes for search input in the chrome toolbar (contrast on dark bar). */
   toolbarSearchInput: string;
+  /** Row that animates max-width for chrome search (closed = icon, open = field). */
+  toolbarSearchExpand: string;
+  toolbarSearchExpandOpen: string;
+  toolbarSearchExpandClosed: string;
+  /** Icon-only chrome controls (search toggle, view menu, refresh). */
+  toolbarIconButton: string;
 }
 
 export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
@@ -189,9 +195,15 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
     'min-w-0 flex-1 basis-full sm:basis-auto sm:max-w-[min(100%,38rem)] [&_input]:max-w-full [&_input]:rounded-xl [&_input]:border [&_input]:border-slate-200/80 [&_input]:bg-white [&_input]:shadow-sm [&_select]:max-w-full [&_select]:rounded-xl [&_select]:border [&_select]:border-slate-200/80 [&_select]:bg-white [&_select]:shadow-sm [&_button]:rounded-xl',
   toolbarSearchWrap: 'min-w-0 w-full max-w-sm sm:w-auto sm:max-w-md',
   toolbarRefreshButton:
-    'inline-flex min-h-[2.75rem] items-center gap-3 rounded-xl border border-transparent bg-transparent px-3.5 py-2 text-sm font-medium text-slate-700 outline-none transition-all hover:border-slate-200/80 hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-50',
+    'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-700 shadow-sm outline-none transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-50',
   toolbarSearchInput:
     '[&_input]:h-10 [&_input]:rounded-xl [&_input]:border [&_input]:border-slate-200/80 [&_input]:bg-white [&_input]:text-slate-900 [&_input]:shadow-sm [&_input]:placeholder:text-slate-400 [&_button]:text-slate-400 [&_button:hover]:text-slate-600',
+  toolbarSearchExpand:
+    'flex h-11 shrink-0 items-center overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-[max-width] duration-300 ease-out motion-reduce:transition-none',
+  toolbarSearchExpandOpen: 'max-w-[min(100%,24rem)]',
+  toolbarSearchExpandClosed: 'max-w-[2.75rem]',
+  toolbarIconButton:
+    'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-700 shadow-sm outline-none transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white data-[state=open]:border-slate-300 data-[state=open]:bg-slate-50',
 };
 
 export function mergeDataTableClassNames(
@@ -233,6 +245,10 @@ export interface DataTableLabels {
   toolbarFiltersDialogTitleLabel: string;
   /** Clears filters and search via table `resetFilters`. */
   toolbarResetFilters: string;
+  /** `aria-label` for collapsed chrome search (opens field). */
+  toolbarSearchOpen: string;
+  /** `aria-label` for expanded chrome search (collapses field). */
+  toolbarSearchClose: string;
 }
 
 export const DEFAULT_DATA_TABLE_LABELS: DataTableLabels = {
@@ -261,6 +277,8 @@ export const DEFAULT_DATA_TABLE_LABELS: DataTableLabels = {
   toolbarSortClear: 'Clear sort',
   toolbarFiltersDialogTitleLabel: 'Filters',
   toolbarResetFilters: 'Reset filters',
+  toolbarSearchOpen: 'Open search',
+  toolbarSearchClose: 'Close search',
 };
 
 export function mergeDataTableLabels(partial?: Partial<DataTableLabels>): DataTableLabels {

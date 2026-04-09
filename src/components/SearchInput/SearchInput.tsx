@@ -37,6 +37,10 @@ export interface SearchInputProps {
    * Optional CSS class names.
    */
   className?: string;
+  /**
+   * When `true`, omit the leading search icon (e.g. chrome toolbar shows its own toggle).
+   */
+  hideLeadingIcon?: boolean;
 }
 
 /**
@@ -51,6 +55,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   onChange,
   placeholder,
   className = '',
+  hideLeadingIcon = false,
 }) => {
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = React.useState(value || '');
@@ -80,13 +85,15 @@ export const SearchInput: React.FC<SearchInputProps> = ({
 
   return (
     <div className={`relative flex items-center ${className}`}>
-      <Search className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+      {!hideLeadingIcon ? (
+        <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
+      ) : null}
       <Input
         type="text"
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
         placeholder={placeholder || defaultPlaceholder}
-        className="pl-9 pr-9 h-9"
+        className={hideLeadingIcon ? 'h-9 pl-3 pr-9' : 'h-9 pl-9 pr-9'}
       />
       {searchValue && (
         <Button

@@ -688,6 +688,7 @@ export function DataTable<
           searchFields={config.searchFields}
           value={searchValue}
           onChange={setSearchValue}
+          hideLeadingIcon={useChromeToolbar}
           className={joinClasses(
             c.searchInput,
             useChromeToolbar ? c.toolbarSearchInput : ""
@@ -739,10 +740,7 @@ export function DataTable<
         toolbarRow: c.toolbarRow,
         toolbarLeft: c.toolbarLeft,
         toolbarRight: c.toolbarRight,
-        toolbarMenuButton: c.toolbarMenuButton,
-        toolbarMenuLabel: c.toolbarMenuLabel,
         toolbarMenuIcon: c.toolbarMenuIcon,
-        toolbarChevron: c.toolbarChevron,
         toolbarDropdownMenuContent: c.toolbarDropdownMenuContent,
         toolbarDropdownMenuItem: c.toolbarDropdownMenuItem,
         toolbarDropdownMenuItemActive: c.toolbarDropdownMenuItemActive,
@@ -750,10 +748,16 @@ export function DataTable<
         toolbarFiltersBeside: c.toolbarFiltersBeside,
         toolbarSearchWrap: c.toolbarSearchWrap,
         toolbarRefreshButton: c.toolbarRefreshButton,
+        toolbarSearchExpand: c.toolbarSearchExpand,
+        toolbarSearchExpandOpen: c.toolbarSearchExpandOpen,
+        toolbarSearchExpandClosed: c.toolbarSearchExpandClosed,
+        toolbarIconButton: c.toolbarIconButton,
       }}
       labels={{
         toolbarView: labels.toolbarView,
         toolbarRefresh: labels.toolbarRefresh,
+        toolbarSearchOpen: labels.toolbarSearchOpen,
+        toolbarSearchClose: labels.toolbarSearchClose,
         viewAsTable: labels.viewAsTable,
         viewAsGrid: labels.viewAsGrid,
         viewAsList: labels.viewAsList,
@@ -762,6 +766,7 @@ export function DataTable<
       filtersPanel={filtersEl}
       hasFilters={Boolean(filtersEl)}
       searchSlot={searchEl}
+      searchHasValue={Boolean(searchValue?.trim())}
       viewModes={availableViewModes}
       currentViewMode={currentViewMode}
       onViewMode={setViewMode}
