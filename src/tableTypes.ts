@@ -146,7 +146,7 @@ export interface DataTableMapViewConfig<TRecord, TFilters extends FilterValues =
   layout?: 'split' | 'full';
   renderPopup?: (args: DataTableMapItemRenderArgs<TRecord, TFilters>) => ReactNode;
   sidebarTitle?: ReactNode;
-  /** Raster tile URL template (Leaflet `{s}`, `{z}`, `{x}`, `{y}`). Defaults to OpenStreetMap’s standard tile layer. */
+  /** Raster tile URL template (Leaflet `{s}`, `{z}`, `{x}`, `{y}`). Defaults to CARTO Voyager road-map tiles. */
   tileLayerUrl?: string;
   /** Attribution HTML string for the tile layer (required by most tile providers). */
   tileAttribution?: string;
