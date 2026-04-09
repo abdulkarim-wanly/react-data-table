@@ -118,13 +118,13 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   pageTitle: '',
   pageSubtitle: '',
   actionsWrapper: '',
-  filtersAndSearchRow: 'flex flex-col gap-3',
+  filtersAndSearchRow: 'relative z-10 flex flex-col gap-3',
   viewModeToggle: 'flex items-center gap-2 flex-wrap',
   viewModeButton: '',
   viewModeButtonActive: '',
   searchWrapper: '',
   searchInput: 'max-w-md',
-  tableOuter: 'overflow-auto',
+  tableOuter: 'relative z-0 isolate overflow-auto',
   tableScroll: '',
   table: 'min-w-full border-collapse',
   tableHeader: '',
@@ -165,9 +165,10 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   paginationButton: '',
   tableBlock:
     'flex w-full max-w-full flex-col overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950',
-  tableOuterChrome: 'max-h-[min(70vh,720px)] min-h-0 flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950',
+  tableOuterChrome:
+    'relative z-0 isolate max-h-[min(70vh,720px)] min-h-0 flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950',
   toolbarShell:
-    'w-full shrink-0 border-b border-slate-200/80 bg-white/90 text-slate-900 backdrop-blur supports-[backdrop-filter]:bg-white/80',
+    'relative z-10 w-full shrink-0 border-b border-slate-200/80 bg-white/90 text-slate-900 backdrop-blur supports-[backdrop-filter]:bg-white/80',
   toolbarRow: 'flex flex-wrap items-center justify-between gap-3 px-4 py-3',
   toolbarLeft: 'flex min-w-0 flex-1 flex-wrap items-center gap-3',
   toolbarRight: 'flex shrink-0 flex-wrap items-center gap-2',
