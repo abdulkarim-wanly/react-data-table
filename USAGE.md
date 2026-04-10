@@ -21,7 +21,6 @@ const config: DataTableConfig<User> = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(query),
       });
-
       return response.json();
     },
   },
@@ -47,14 +46,6 @@ export function UsersPage() {
 Use the second generic to keep `query.filters` typed.
 
 ```tsx
-import { DataTable, type DataTableConfig } from "genesis-react-data-table";
-
-type User = {
-  id: string;
-  name: string;
-  status: "active" | "archived";
-};
-
 type UserFilters = {
   status?: "active" | "archived";
   role?: string;
@@ -63,17 +54,8 @@ type UserFilters = {
 const config: DataTableConfig<User, UserFilters> = {
   service: {
     getAll: async (query) => {
-      query.filters.status;
-      query.filters.role;
-
-      return {
-        data: [],
-        meta: {
-          total: 0,
-          page: query.page,
-          perPage: query.perPage,
-        },
-      };
+      // query.filters.status and query.filters.role are fully typed
+      return fetch("/api/users", { ... }).then(r => r.json());
     },
   },
   columns: [{ accessorKey: "name", header: "Name" }],
@@ -84,7 +66,7 @@ export function UsersPage() {
 }
 ```
 
-If `searchFields` is enabled, the table also adds:
+If `searchFields` is enabled, the table also merges:
 
 ```ts
 {
@@ -93,20 +75,15 @@ If `searchFields` is enabled, the table also adds:
 }
 ```
 
-to the filter object passed into `service.getAll`.
+into the filter object passed to `service.getAll`.
 
 ## 3. Search
 
-Enable built-in search by adding `searchFields`.
+Enable the built-in search input by adding `searchFields`.
 
 ```tsx
 const config: DataTableConfig<User> = {
-  service: {
-    getAll: async (query) => ({
-      data: [],
-      meta: { total: 0, page: query.page, perPage: query.perPage },
-    }),
-  },
+  service: { getAll: fetchUsers },
   columns: [
     { accessorKey: "name", header: "Name" },
     { accessorKey: "email", header: "Email" },
@@ -115,32 +92,22 @@ const config: DataTableConfig<User> = {
 };
 ```
 
-The table will merge the current search term into `query.filters.search` and `query.filters.searchFields`.
-
 ## 4. Toolbar Actions
 
 Use `actions` for global table-level buttons.
 
 ```tsx
 import { Download, Plus } from "lucide-react";
-import { type DataTableConfig } from "genesis-react-data-table";
 
 const config: DataTableConfig<User> = {
-  service: {
-    getAll: async (query) => ({
-      data: [],
-      meta: { total: 0, page: query.page, perPage: query.perPage },
-    }),
-  },
-  columns: [{ accessorKey: "name", header: "Name" }],
+  service: { getAll: fetchUsers },
+  columns: [...],
   actions: [
     {
       id: "create",
       label: "Create user",
       icon: Plus,
-      openModal: async () => ({
-        type: "create-user",
-      }),
+      openModal: async () => ({ type: "create-user" }),
     },
     {
       id: "export",
@@ -152,29 +119,23 @@ const config: DataTableConfig<User> = {
     },
   ],
   onOpenModal: (type, props) => {
-    console.log(type, props);
+    openMyModalSystem(type, props);
   },
 };
 ```
 
-Each toolbar action receives the full `DataTableActionsContext`.
-
 ## 5. Row Actions
 
-Use `rowActions` for per-record buttons.
+Use `rowActions` for per-record buttons. They render using the shared `Button`
+component (`size="sm"`, `variant="ghost"` by default) for visual consistency
+with toolbar actions. Override the variant per action with `buttonVariant`.
 
 ```tsx
-import { Eye, Pencil } from "lucide-react";
-import { type DataTableConfig } from "genesis-react-data-table";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 
 const config: DataTableConfig<User> = {
-  service: {
-    getAll: async (query) => ({
-      data: [],
-      meta: { total: 0, page: query.page, perPage: query.perPage },
-    }),
-  },
-  columns: [{ accessorKey: "name", header: "Name" }],
+  service: { getAll: fetchUsers },
+  columns: [...],
   rowActions: [
     {
       id: "view",
@@ -190,37 +151,50 @@ const config: DataTableConfig<User> = {
       label: "Edit",
       icon: Pencil,
       visibleWhen: (record) => record.status !== "archived",
-      onClick: async ({ record }) => {
-        console.log("Edit", record.id);
-      },
+      onClick: async ({ record }) => console.log("Edit", record.id),
+    },
+    {
+      id: "delete",
+      label: "Delete",
+      icon: Trash2,
+      buttonVariant: "destructive", // override the default ghost variant
+      onClick: async ({ record }) => console.log("Delete", record.id),
     },
   ],
-  onOpenModal: (type, props) => {
-    console.log(type, props);
-  },
+  onOpenModal: (type, props) => openMyModalSystem(type, props),
 };
 ```
 
-By default the table appends an `Actions` column automatically when `rowActions` exists.
-
-If you already render actions in your own column, disable that behavior:
+By default the table appends an `Actions` column automatically when `rowActions`
+exists. Disable it if you already have an actions column:
 
 ```tsx
 autoRowActionsColumn: false;
 ```
 
-## 6. Custom Filters UI
+## 6. Sorting
 
-Use `filtersUI` when you want inline custom filters.
+Column sorting is server-side. Mark columns sortable with the `sortable`
+shorthand (or TanStack's `enableSorting`). The current sort state is passed to
+`service.getAll` via `query.sorting`. Sortable headers render an inline SVG
+indicator — no emoji, no extra dependencies.
+
+```tsx
+columns: [
+  { accessorKey: "name",      header: "Name",    sortable: true },
+  { accessorKey: "email",     header: "Email",   sortable: true },
+  { accessorKey: "createdAt", header: "Created", sortable: true },
+  { accessorKey: "role",      header: "Role",    sortable: false },
+],
+```
+
+## 7. Custom Filters UI
 
 ### Function form
 
 ```tsx
 filtersUI: (context) => (
-  <button
-    type="button"
-    onClick={() => context.applyFilters({ status: "active" })}
-  >
+  <button type="button" onClick={() => context.applyFilters({ status: "active" })}>
     Active only
   </button>
 );
@@ -232,15 +206,10 @@ filtersUI: (context) => (
 filtersUI: {
   render: ({ filters, applyFilters, resetFilters }) => (
     <div className="flex gap-2">
-      <button
-        type="button"
-        onClick={() => applyFilters({ ...filters, status: "active" })}
-      >
+      <button type="button" onClick={() => applyFilters({ ...filters, status: "active" })}>
         Active
       </button>
-      <button type="button" onClick={resetFilters}>
-        Reset
-      </button>
+      <button type="button" onClick={resetFilters}>Reset</button>
     </div>
   ),
 };
@@ -248,7 +217,7 @@ filtersUI: {
 
 ### Dynamic form host
 
-If your app already has a reusable filter form, register it once:
+Register your app's form system once at startup:
 
 ```tsx
 import { setDefaultDataTableFiltersHost } from "genesis-react-data-table/setup";
@@ -257,7 +226,7 @@ import { AppFiltersHost } from "./AppFiltersHost";
 setDefaultDataTableFiltersHost(AppFiltersHost);
 ```
 
-Then configure tables with `formConfig` and `onApply`:
+Then configure each table with `formConfig` and `onApply`:
 
 ```tsx
 filtersUI: {
@@ -265,18 +234,19 @@ filtersUI: {
     id: "user-filters",
     fields: [
       { name: "status", type: "select" },
-      { name: "role", type: "text" },
+      { name: "role",   type: "text" },
     ],
   }),
   onApply: ({ values, context }) => {
-    context.applyFilters(values as { status?: string; role?: string });
+    context.applyFilters(values as UserFilters);
   },
 };
 ```
 
-## 7. Full Filters Override
+## 8. Full Filters Override
 
-If you want complete control of the filters area, use `renderFilters`.
+For complete control of the filters area, use `renderFilters`. When set, the
+table ignores `filtersUI` for that slot.
 
 ```tsx
 renderFilters: (context) => (
@@ -284,31 +254,22 @@ renderFilters: (context) => (
     <button type="button" onClick={() => context.applyFilters({ status: "active" })}>
       Active
     </button>
-    <button type="button" onClick={context.resetFilters}>
-      Reset
-    </button>
+    <button type="button" onClick={context.resetFilters}>Reset</button>
   </div>
 );
 ```
 
-When `renderFilters` is set, the table ignores `filtersUI` for that slot.
+## 9. Grid and List Views
 
-## 8. Grid And List Views
-
-Enable alternate renderers with `views`.
+Enable alternate renderers with `views`. The user's chosen mode is persisted in
+`localStorage` by default. Grid/list items are keyed by `id`, `_id`, `uuid`, or
+`key` on the record — falling back to array index only when none of those exist,
+so React reconciliation stays correct when rows are filtered or reordered.
 
 ```tsx
 const config: DataTableConfig<User> = {
-  service: {
-    getAll: async (query) => ({
-      data: [],
-      meta: { total: 0, page: query.page, perPage: query.perPage },
-    }),
-  },
-  columns: [
-    { accessorKey: "name", header: "Name" },
-    { accessorKey: "email", header: "Email" },
-  ],
+  service: { getAll: fetchUsers },
+  columns: [...],
   views: {
     modes: ["table", "grid", "list"],
     defaultMode: "table",
@@ -320,47 +281,47 @@ const config: DataTableConfig<User> = {
     ),
     renderListItem: ({ record }) => (
       <div className="rounded-lg border p-3">
-        {record.name} - {record.email}
+        {record.name} — {record.email}
       </div>
     ),
   },
 };
 ```
 
-## 9. Map View
+Disable localStorage persistence:
+
+```tsx
+views: {
+  modes: ["table", "grid"],
+  persistMode: false,
+  renderGridItem: ({ record }) => <div>{record.name}</div>,
+},
+```
+
+## 10. Map View
 
 Map view requires Leaflet CSS and coordinate mapping.
 
 ```tsx
 import "leaflet/dist/leaflet.css";
 
-type Property = {
-  id: string;
-  name: string;
-  city: string;
-  lat: number;
-  lng: number;
-};
+type Property = { id: string; name: string; city: string; lat: number; lng: number };
 
 const config: DataTableConfig<Property> = {
-  service: {
-    getAll: async (query) => ({
-      data: [],
-      meta: { total: 0, page: query.page, perPage: query.perPage },
-    }),
-  },
+  service: { getAll: fetchProperties },
   columns: [{ accessorKey: "name", header: "Name" }],
   views: {
     modes: ["table", "map"],
     map: {
       getCoordinates: (record) => ({ lat: record.lat, lng: record.lng }),
       renderCard: ({ record, isActive }) => (
-        <article className={isActive ? "rounded-xl border border-blue-500 p-4" : "rounded-xl border p-4"}>
+        <article className={isActive ? "border-blue-500 border rounded-xl p-4" : "border rounded-xl p-4"}>
           <h3>{record.name}</h3>
           <p>{record.city}</p>
         </article>
       ),
       sidebarTitle: "Property locations",
+      layout: "split", // or "full" (default)
       initialZoom: 10,
       showNavigation: true,
     },
@@ -368,103 +329,72 @@ const config: DataTableConfig<Property> = {
 };
 ```
 
-Map layout options:
+Layout options:
 
-- `layout: "full"` is the default
-- `layout: "split"` shows a sidebar plus map
+- `layout: "full"` (default) — map fills the container; tap a marker to open a React popup
+- `layout: "split"` — sidebar list on the left, interactive map on the right
 
-## 10. Styling
+## 11. Styling
 
 Override layout class names through `classNames`.
 
 ```tsx
-import {
-  DEFAULT_DATA_TABLE_CLASSNAMES,
-  type DataTableConfig,
-} from "genesis-react-data-table";
+import { mergeDataTableClassNames } from "genesis-react-data-table";
 
 const config: DataTableConfig<User> = {
-  service: {
-    getAll: async (query) => ({
-      data: [],
-      meta: { total: 0, page: query.page, perPage: query.perPage },
-    }),
-  },
-  columns: [{ accessorKey: "name", header: "Name" }],
-  classNames: {
-    ...DEFAULT_DATA_TABLE_CLASSNAMES,
-    root: "flex flex-col gap-4",
+  service: { getAll: fetchUsers },
+  columns: [...],
+  classNames: mergeDataTableClassNames({
     tableOuter: "rounded-2xl border overflow-hidden",
     tableScroll: "max-h-[520px] overflow-auto",
-  },
+  }),
 };
 ```
 
-Or merge a partial override:
+### Chrome toolbar controls
 
-```tsx
-import { mergeDataTableClassNames } from "genesis-react-data-table";
-
-const classNames = mergeDataTableClassNames({
-  tableOuter: "rounded-2xl border overflow-hidden",
-  tableScroll: "max-h-[520px] overflow-auto",
-});
-```
-
-### Chrome toolbar buttons (`chromeToolbar`)
-
-Style each control separately via `classNames`:
-
-| Key | Element |
-|-----|---------|
-| `toolbarButtonViewMode` | View mode dropdown trigger (icon) |
-| `toolbarRefreshButton` | Refresh (icon) |
-| `toolbarButtonSearchOpen` | Collapsed search (opens field) |
-| `toolbarButtonSearchClose` | Expanded search (closes field, joined to input) |
+| `classNames` key | Element |
+|---|---|
+| `toolbarButtonViewMode` | View mode dropdown trigger |
+| `toolbarRefreshButton` | Refresh button |
+| `toolbarButtonSearchOpen` | Collapsed search — opens the field |
+| `toolbarButtonSearchClose` | Expanded search — closes the field |
 | `toolbarDropdownItemIconWrap` | Icon box in each view menu row |
-| `toolbarDropdownItemIconWrapActive` | Added for the active view row’s icon box |
+| `toolbarDropdownItemIconWrapActive` | Added for the active view row |
 
-Set **`toolbarIconButton`** once in a partial merge to reuse the same base classes for view, search open/close, and refresh (see `mergeDataTableClassNames` — it copies into the keys above unless you override them individually).
+Set **`toolbarIconButton`** once to apply a shared base class to all icon
+controls above (see `mergeDataTableClassNames`).
 
-## 11. Labels
+## 12. Labels
 
 Replace default English labels through `labels`.
 
 ```tsx
 const config: DataTableConfig<User> = {
-  service: {
-    getAll: async (query) => ({
-      data: [],
-      meta: { total: 0, page: query.page, perPage: query.perPage },
-    }),
-  },
-  columns: [{ accessorKey: "name", header: "Name" }],
+  service: { getAll: fetchUsers },
+  columns: [...],
   labels: {
-    noResults: "No users found",
-    errorLoading: "Could not load users",
+    noResults:     "No users found",
+    errorLoading:  "Could not load users",
     toolbarRefresh: "Reload",
-    viewAsGrid: "Cards",
+    viewAsGrid:    "Cards",
+    actionsColumn: "Operations", // renames the auto-injected row actions column
   },
 };
 ```
 
-## 12. Custom Layout Wrappers
+## 13. Custom Layout Wrappers
 
-Use `layoutComponents` to swap wrapper components while keeping the table logic.
+Use `layoutComponents` to replace the header, toolbar, or table shell while
+keeping all table logic.
 
 ```tsx
 import type {
-  DataTableConfig,
   DataTablePageHeaderSlotProps,
   DataTableToolbarSlotProps,
 } from "genesis-react-data-table";
 
-function PageHeader({
-  title,
-  subtitle,
-  rightSlot,
-  classNames,
-}: DataTablePageHeaderSlotProps) {
+function PageHeader({ title, subtitle, rightSlot, classNames }: DataTablePageHeaderSlotProps) {
   return (
     <div className={classNames.headerCard}>
       <div className={classNames.pageHeaderWrapper}>
@@ -481,39 +411,86 @@ function Toolbar({ children, classNames }: DataTableToolbarSlotProps) {
 }
 
 const config: DataTableConfig<User> = {
-  service: {
-    getAll: async (query) => ({
-      data: [],
-      meta: { total: 0, page: query.page, perPage: query.perPage },
-    }),
+  service: { getAll: fetchUsers },
+  columns: [...],
+  layoutComponents: { PageHeader, Toolbar },
+};
+```
+
+## 14. Modal Registry
+
+`onRegisterModal` gives you a map of all action handlers keyed by
+`"<tableId>:action:<id>"` or `"<tableId>:rowAction:<id>"`. Use it to
+pre-register handlers at the app level.
+
+```tsx
+const config: DataTableConfig<User> = {
+  id: "users",
+  service: { getAll: fetchUsers },
+  columns: [...],
+  rowActions: [
+    {
+      id: "edit",
+      label: "Edit",
+      openModal: async ({ record }) => ({
+        type: "edit-user",
+        props: { userId: record.id },
+      }),
+    },
+  ],
+  onRegisterModal: (registry) => {
+    // registry["users:rowAction:edit"] — callable externally
+    console.log(Object.keys(registry));
   },
-  columns: [{ accessorKey: "name", header: "Name" }],
-  layoutComponents: {
-    PageHeader,
-    Toolbar,
+  onOpenModal: (type, props) => openMyModalSystem(type, props),
+};
+```
+
+## 15. URL Actions
+
+Use `onUrlAction` to sync URL query parameters on mount. The callback fires
+**once** when the table mounts — it does not re-run if the callback reference
+changes. Capture any values you need inside the callback itself.
+
+```tsx
+const config: DataTableConfig<User, UserFilters> = {
+  service: { getAll: fetchUsers },
+  columns: [...],
+  onUrlAction: ({ context }) => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status") as UserFilters["status"];
+    if (status) context.applyFilters({ status });
   },
 };
 ```
 
-## 13. Useful Exports
+## 16. Useful Exports
 
-You can also import:
+Stand-alone components you can import independently:
 
-- `ActionButtonsBar`
-- `UserActionCell`
-- `SearchInput`
-- `InlineFiltersUI`
-- `DataTablePageHeader`
-- `DataTableToolbar`
-- `componentCell`
+- `ActionButtonsBar` — toolbar action buttons
+- `UserActionCell` — row action buttons
+- `SearchInput` — the built-in search input
+- `InlineFiltersUI` — the inline filters slot
+- `DataTablePageHeader` — the default page header
+- `DataTableToolbar` — the chrome toolbar
+- `componentCell` — column helper for rendering a component inside a cell
+
+Helpers:
+
 - `mergeDataTableClassNames`
 - `mergeDataTableLabels`
+- `setDefaultDataTableFiltersHost` (from `genesis-react-data-table/setup`)
+- `isModalPayload`
 
-## 14. Common Notes
+## 17. Common Notes
 
 - `service.getAll` is the only required integration point.
 - Pagination behaves best when you return `meta.total`.
-- `hasNext` and `hasPrevious` are useful for cursor-style APIs.
-- The selected view mode is persisted by default.
-- `chromeToolbar` is enabled by default.
+- `hasNext` / `hasPrevious` are useful for cursor-style APIs.
+- The selected view mode is persisted to `localStorage` by default; disable with `views.persistMode: false`.
+- `chromeToolbar` is enabled by default; set `chromeToolbar: false` to use the legacy light toolbar.
 - `onOpenModal` is only needed if your actions use `openModal`.
+- Row action buttons default to `variant="ghost"`; override per-action with `buttonVariant`.
+- Grid/list items are keyed by `id`, `_id`, `uuid`, or `key` — falling back to index only when none exist.
+- The package has `sideEffects: false`, enabling full tree-shaking for consumers using Webpack or Rollup.

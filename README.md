@@ -37,15 +37,14 @@ npm install git+ssh://git@github.com:YOUR_ORG/YOUR_REPO.git#main
 
 ## Requirements
 
-| Package | Version |
-| --- | --- |
-| `react` / `react-dom` | `>= 18` |
-| `@tanstack/react-query` | `^5` |
-| `@tanstack/react-table` | `^8` |
-| `react-i18next` | `>= 11` |
-| `i18next` | app dependency when using `react-i18next` |
-| `lucide-react` | `>= 0.400.0` |
-| `leaflet` | `^1.9` for map view |
+| Package | Version | Notes |
+| --- | --- | --- |
+| `react` / `react-dom` | `>= 18` | |
+| `@tanstack/react-query` | `^5` | required |
+| `@tanstack/react-table` | `^8` | required |
+| `react-i18next` | `>= 11` | used by the built-in `SearchInput` |
+| `lucide-react` | `>= 0.400.0` | for action icons |
+| `leaflet` | `^1.9` | map view only |
 
 ## Required App Setup
 
@@ -193,10 +192,11 @@ type ServiceResult<TRecord> = {
 | Key | Purpose |
 | --- | --- |
 | `service.getAll` | Required data loader |
-| `columns` | TanStack column definitions |
+| `columns` | TanStack column definitions (`sortable` shorthand supported) |
 | `searchFields` | Enables built-in search keys in `filters` |
 | `actions` | Toolbar buttons |
-| `rowActions` | Per-row action buttons |
+| `rowActions` | Per-row action buttons (rendered with `Button`, `variant="ghost"` default; override with `buttonVariant`) |
+| `autoRowActionsColumn` | Set `false` to suppress the auto-injected Actions column |
 | `filtersUI` | Inline filter UI slot |
 | `renderFilters` | Full override for the filters area |
 | `views` | Enables `table`, `grid`, `list`, `map` modes |
@@ -204,26 +204,23 @@ type ServiceResult<TRecord> = {
 | `classNames` | Partial `DataTableClassNames` override |
 | `labels` | Partial `DataTableLabels` override |
 | `layoutComponents` | Replace header, toolbar, or shell wrappers |
-| `chromeToolbar` | Uses the built-in toolbar layout when `true` |
+| `chromeToolbar` | Dark chrome toolbar when `true` (default); `false` for legacy light toolbar |
 | `onOpenModal` | Modal integration for actions |
-| `onRegisterModal` | Registers modal handlers by action id |
+| `onRegisterModal` | Receives a map of all modal handlers keyed by action id |
+| `onUrlAction` | Fires once on mount; use to sync URL params into table state |
 
 ## View Modes
 
-Supported modes:
+Supported modes: `table`, `grid`, `list`, `map`.
 
-- `table`
-- `grid`
-- `list`
-- `map`
+- `grid` requires `views.renderGridItem`
+- `list` requires `views.renderListItem`
+- `map` requires `views.map.getCoordinates` and `views.map.renderCard`
 
-`grid` requires `views.renderGridItem`.
-
-`list` requires `views.renderListItem`.
-
-`map` requires `views.map.getCoordinates` and `views.map.renderCard`.
-
-The table can persist the selected view mode in `localStorage`. This is enabled by default.
+The selected mode is persisted to `localStorage` by default. Disable with
+`views.persistMode: false`. Grid and list items are keyed by `id`, `_id`,
+`uuid`, or `key` on the record — falling back to array index only when none of
+those fields exist.
 
 ## Styling And Layout
 
@@ -269,7 +266,12 @@ Main exports:
 - `SearchInput`
 - `InlineFiltersUI`
 - `componentCell`
-- `setDefaultDataTableFiltersHost`
+- `setDefaultDataTableFiltersHost` (also at `genesis-react-data-table/setup`)
+- `isModalPayload`
+- `mergeDataTableClassNames`
+- `mergeDataTableLabels`
+- `DEFAULT_DATA_TABLE_CLASSNAMES`
+- `DEFAULT_DATA_TABLE_LABELS`
 
 Key types:
 
@@ -280,8 +282,13 @@ Key types:
 - `DataTableColumnDef`
 - `DataTableViewMode`
 - `DataTableMapViewConfig`
+- `DataTableClassNames`
+- `DataTableLabels`
+- `DataTableLayoutComponents`
 - `ServiceQuery`
 - `ServiceResult`
+- `TableAction`
+- `RowAction`
 
 ## Usage Guide
 
