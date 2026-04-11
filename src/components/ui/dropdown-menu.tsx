@@ -148,8 +148,13 @@ const DropdownMenuTrigger = React.forwardRef<HTMLElement, DropdownMenuTriggerPro
       });
     }
 
+    const triggerButtonProps = triggerProps as React.ButtonHTMLAttributes<HTMLButtonElement>;
     return (
-      <button type="button" {...(triggerProps as React.ButtonHTMLAttributes<HTMLButtonElement>)}>
+      <button
+        type="button"
+        {...triggerButtonProps}
+        className={cn('cursor-pointer', triggerButtonProps.className)}
+      >
         {children}
       </button>
     );

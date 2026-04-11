@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
  * Uses `bg-background` / `text-foreground` for shadcn-style themes; override via `classNames` if needed.
  */
 const TOOLBAR_ICON_CONTROL =
-  'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-background/40 text-foreground shadow-sm outline-none transition-colors hover:bg-background/60 focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50';
+  'inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-background/40 text-foreground shadow-sm outline-none transition-colors hover:bg-background/60 focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50';
 
 const TOOLBAR_ICON_CONTROL_MENU =
   `${TOOLBAR_ICON_CONTROL} data-[state=open]:border-white/20 data-[state=open]:bg-background/55`;
@@ -173,11 +173,12 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   mapDetailPanel:
     'pointer-events-none absolute inset-x-0 bottom-0 z-[1000] flex justify-center px-4 pb-6 pt-16 bg-gradient-to-t from-slate-900/25 via-transparent to-transparent',
   mapDetailClose:
-    'pointer-events-auto absolute -top-1 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 bg-white text-lg font-light text-slate-600 shadow-md transition hover:bg-slate-50 hover:text-slate-900',
+    'pointer-events-auto absolute -top-1 right-2 z-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-slate-200/80 bg-white text-lg font-light text-slate-600 shadow-md transition hover:bg-slate-50 hover:text-slate-900',
   mapSidebar: 'flex min-h-[420px] flex-col rounded-2xl border border-slate-200/70 bg-white/80 p-3 shadow-sm backdrop-blur',
   mapSidebarHeader: 'mb-3 flex items-center justify-between gap-3 text-sm font-medium text-slate-700',
   mapSidebarList: 'flex flex-1 flex-col gap-3 overflow-auto pr-1',
-  mapCard: 'rounded-xl border border-slate-200/70 bg-white p-4 shadow-sm transition',
+  mapCard:
+    'cursor-pointer rounded-xl border border-slate-200/70 bg-white p-4 shadow-sm transition',
   mapCardActive: 'border-blue-400 bg-blue-50/70 ring-2 ring-blue-200',
   mapCanvasShell:
     'relative min-h-[min(72vh,720px)] w-full overflow-hidden rounded-2xl border border-slate-200/70 bg-slate-100 shadow-sm',
@@ -188,7 +189,7 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   paginationInfo: '',
   paginationMeta: 'text-muted-foreground',
   paginationButtons: 'flex items-center gap-2',
-  paginationButton: '',
+  paginationButton: 'cursor-pointer disabled:cursor-not-allowed',
   tableBlock:
     'flex w-full max-w-full flex-col overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950',
   tableOuterChrome:

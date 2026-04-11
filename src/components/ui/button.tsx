@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { cn } from '../../lib/utils';
+
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /**
    * Variant can be used by consumers to apply their own styles. This library
@@ -24,7 +26,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={className}
+        className={cn('cursor-pointer disabled:cursor-not-allowed', className)}
         data-variant={variant}
         data-size={size}
         {...props}
