@@ -8,6 +8,7 @@ import type {
   TableIconComponent,
 } from '../../tableTypes';
 import { isModalPayload } from '../../tableTypes';
+import { mergeOpenModalProps } from '../../lib/mergeOpenModalProps';
 
 export interface RowAction<TRecord, TFilters extends FilterValues = FilterValues> {
   id: string;
@@ -62,7 +63,14 @@ export function UserActionCell<TRecord, TFilters extends FilterValues = FilterVa
     if (action.openModal) {
       const payload = await action.openModal({ record, context });
       if (isModalPayload(payload) && onOpenModal) {
-        onOpenModal(payload.type, { ...(payload.props ?? {}), context, record });
+        onOpenModal(
+          payload.type,
+          mergeOpenModalProps(
+            payload.props as Record<string, unknown> | undefined,
+            context,
+            record
+          )
+        );
       }
     } else if (action.onClick) {
       await action.onClick({ record, context });

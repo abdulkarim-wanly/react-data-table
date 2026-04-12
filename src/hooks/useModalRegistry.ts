@@ -5,6 +5,7 @@ import { isModalPayload } from '../tableTypes';
 import type { TableAction } from '../components/ActionButtonsBar/ActionButtonsBar';
 import type { RowAction } from '../components/UserActionCell/UserActionCell';
 import type { OpenModalCallback } from '../tableTypes';
+import { mergeOpenModalProps } from '../lib/mergeOpenModalProps';
 
 export interface UseModalRegistryArgs<TRecord, TFilters extends FilterValues> {
   tableId: string;
@@ -34,7 +35,10 @@ export function useModalRegistry<TRecord, TFilters extends FilterValues = Filter
         }) => {
           const payload = await Promise.resolve(openModal({ context }));
           if (isModalPayload(payload) && onOpenModal) {
-            onOpenModal(payload.type, { ...(payload.props ?? {}), context });
+            onOpenModal(
+              payload.type,
+              mergeOpenModalProps(payload.props as Record<string, unknown> | undefined, context)
+            );
           }
         };
       }
@@ -51,7 +55,14 @@ export function useModalRegistry<TRecord, TFilters extends FilterValues = Filter
           };
           const payload = await Promise.resolve(openModal({ record, context }));
           if (isModalPayload(payload) && onOpenModal) {
-            onOpenModal(payload.type, { ...(payload.props ?? {}), context, record });
+            onOpenModal(
+              payload.type,
+              mergeOpenModalProps(
+                payload.props as Record<string, unknown> | undefined,
+                context,
+                record
+              )
+            );
           }
         };
       }

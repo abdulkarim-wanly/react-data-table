@@ -235,6 +235,10 @@ The library keeps the latest `onAfterMutationSuccess` on an internal ref, so you
 
 Toolbar **`openModal`** merges **`context`** into `onOpenModal` props the same way (no `record` unless you add it to `props` yourself).
 
+Modal props also include **`dataTableContext`**, a duplicate reference of the same object as **`context`**, for apps that accidentally overwrite or strip `context` when forwarding to a store.
+
+**If `context` arrives as `{}` in your modal:** forward `onOpenModal` props **without** replacing them, e.g. `openModal(type, props)` — do not do `context: someRef.current ?? {}` or `JSON.stringify`/`parse` on props. In `ReservationModal`, you can use `const tableCtx = context?.refresh ? context : dataTableContext`.
+
 ## 7. Sorting
 
 Column sorting is **off by default**. Set **`enableSorting: true`** on the config to allow header clicks and to pass `query.sorting` to `service.getAll`.

@@ -8,6 +8,7 @@ import type {
   TableIconComponent,
 } from '../../tableTypes';
 import { isModalPayload } from '../../tableTypes';
+import { mergeOpenModalProps } from '../../lib/mergeOpenModalProps';
 
 export interface TableAction<TRecord = unknown, TFilters extends FilterValues = FilterValues> {
   id: string;
@@ -49,7 +50,10 @@ export function ActionButtonsBar<TRecord = unknown, TFilters extends FilterValue
     if (action.openModal) {
       const payload = await action.openModal({ context });
       if (isModalPayload(payload) && onOpenModal) {
-        onOpenModal(payload.type, { ...(payload.props ?? {}), context });
+        onOpenModal(
+          payload.type,
+          mergeOpenModalProps(payload.props as Record<string, unknown> | undefined, context)
+        );
       }
     } else if (action.onClick) {
       await action.onClick({ context });
