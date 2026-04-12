@@ -1,6 +1,10 @@
 import type { Dispatch, SetStateAction, ComponentType, ReactNode } from 'react';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
-import type { QueryObserverResult, RefetchOptions } from '@tanstack/react-query';
+import type {
+  QueryClient,
+  QueryObserverResult,
+  RefetchOptions,
+} from '@tanstack/react-query';
 
 /** Base shape for custom filter fields (use optional keys). */
 export type FilterValues = Record<string, unknown>;
@@ -80,12 +84,23 @@ export type DataTableRefetch<TRecord> = (
   options?: RefetchOptions
 ) => Promise<QueryObserverResult<ServiceResult<TRecord> | undefined, Error>>;
 
+/** Passed to `onAfterMutationSuccess` in `DataTable` config after the table query refetch completes. */
+export interface OnAfterMutationSuccessArgs<TRecord> {
+  queryClient: QueryClient;
+  refetch: DataTableRefetch<TRecord>;
+}
+
 /**
  * Mutable table UI state and helpers passed to actions, filters, and URL hooks.
  * Generic over the row type and your filter record so callbacks stay typed.
  */
 export interface DataTableActionsContext<TRecord, TFilters extends FilterValues = FilterValues> {
   refetch: DataTableRefetch<TRecord>;
+  /**
+   * Refetches this table’s query, then runs `onAfterMutationSuccess` from config when set.
+   * Prefer this over {@link refetch} after mutations (e.g. modal save) when you need related invalidations.
+   */
+  refreshAfterMutation: () => Promise<void>;
   isFetching: boolean;
   page: number;
   perPage: number;

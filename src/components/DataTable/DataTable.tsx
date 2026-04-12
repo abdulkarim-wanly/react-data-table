@@ -1,5 +1,5 @@
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ColumnDef,
   getCoreRowModel,
@@ -39,6 +39,7 @@ import type {
   FilterValues,
   MergedTableFilters,
   ModalRegistryHandler,
+  OnAfterMutationSuccessArgs,
   OpenModalCallback,
   ServiceQuery,
   ServiceResult,
@@ -231,6 +232,14 @@ export interface DataTableConfig<
   gcTime?: number;
   refetchOnWindowFocus?: boolean;
   /**
+   * Runs after {@link DataTableActionsContext.refreshAfterMutation} refetches the table query.
+   * Use for app-specific follow-up (e.g. `queryClient.invalidateQueries`) without coupling this
+   * library to your domain. Call `context.refreshAfterMutation()` from modals / mutation handlers.
+   */
+  onAfterMutationSuccess?: (
+    args: OnAfterMutationSuccessArgs<TRecord>
+  ) => void | Promise<void>;
+  /**
    * Callback that receives a registry map of modal ids to handlers. Use this
    * function to integrate your application's modal system. The keys are of
    * the form `action:<id>` or `rowAction:<id>`.
@@ -390,6 +399,19 @@ export function DataTable<
     refetchOnWindowFocus: config.refetchOnWindowFocus ?? false,
   });
 
+  const queryClient = useQueryClient();
+
+  const onAfterMutationSuccessRef = React.useRef(config.onAfterMutationSuccess);
+  onAfterMutationSuccessRef.current = config.onAfterMutationSuccess;
+
+  const refreshAfterMutation = React.useCallback(async () => {
+    await refetch();
+    const onExtra = onAfterMutationSuccessRef.current;
+    if (typeof onExtra === "function") {
+      await onExtra({ queryClient, refetch });
+    }
+  }, [refetch, queryClient]);
+
   const tableData = data?.data ?? [];
 
   // ---- View mode availability ----------------------------------------------
@@ -435,6 +457,7 @@ export function DataTable<
   >(
     () => ({
       refetch,
+      refreshAfterMutation,
       isFetching,
       page,
       perPage,
@@ -462,6 +485,7 @@ export function DataTable<
     }),
     [
       refetch,
+      refreshAfterMutation,
       isFetching,
       page,
       perPage,

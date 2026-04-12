@@ -18,6 +18,7 @@ export type {
   DataTableActionsContext,
   DataTableColumnMeta,
   DataTableColumnDef,
+  OnAfterMutationSuccessArgs,
   DataTableMapCoordinates,
   DataTableMapItemRenderArgs,
   DataTableMapViewConfig,
