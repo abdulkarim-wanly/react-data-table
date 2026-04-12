@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '../../lib/utils';
 
 /**
  * Simple table component wrappers. These wrappers are intentionally minimal so
@@ -27,5 +28,5 @@ export const TableCell: React.FC<React.TdHTMLAttributes<HTMLTableCellElement>> =
 );
 
 export const TableHead: React.FC<React.ThHTMLAttributes<HTMLTableCellElement>> = ({ children, className, ...props }) => (
-  <th className={className} {...props}>{children}</th>
+  <th className={cn(className, 'text-start align-top')} {...props}>{children}</th>
 );
