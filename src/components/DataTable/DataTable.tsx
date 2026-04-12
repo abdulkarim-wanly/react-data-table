@@ -1,5 +1,9 @@
 import React from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useQueryClient,
+  type RefetchOptions,
+} from "@tanstack/react-query";
 import {
   ColumnDef,
   getCoreRowModel,
@@ -232,9 +236,15 @@ export interface DataTableConfig<
   gcTime?: number;
   refetchOnWindowFocus?: boolean;
   /**
-   * Runs after {@link DataTableActionsContext.refreshAfterMutation} refetches the table query.
-   * Use for app-specific follow-up (e.g. `queryClient.invalidateQueries`) without coupling this
-   * library to your domain. Call `context.refreshAfterMutation()` from modals / mutation handlers.
+   * When `true`, column headers toggle sort state and `query.sorting` is sent to `service.getAll`.
+   * When `false` (default), sorting UI and client sort toggles are disabled.
+   */
+  enableSorting?: boolean;
+  /**
+   * Runs after the table query refetch completes when using {@link DataTableActionsContext.refresh},
+   * {@link DataTableActionsContext.refreshAfterMutation}, or the chrome toolbar refresh button.
+   * Does **not** run for raw {@link DataTableActionsContext.refetch} (TanStack Query only).
+   * Use for follow-up such as `queryClient.invalidateQueries` for unrelated queries.
    */
   onAfterMutationSuccess?: (
     args: OnAfterMutationSuccessArgs<TRecord>
@@ -277,7 +287,7 @@ export interface DataTableConfig<
    */
   layoutComponents?: DataTableLayoutComponents;
   /**
-   * When `true` (default), filters, search, column sort, view mode, and refresh use a dark chrome toolbar
+   * When `true` (default), filters, search, view mode, and refresh use a dark chrome toolbar
    * above the table. When `false`, the previous light filters row and outline view toggle is used.
    */
   chromeToolbar?: boolean;
@@ -336,6 +346,7 @@ export function DataTable<
   const [page, setPage] = React.useState(1);
   const [perPage, setPerPage] = React.useState(config.defaultPerPage ?? 10);
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const sortingEnabled = config.enableSorting === true;
   const [filters, setFilters] = React.useState<MergedTableFilters<TFilters>>(
     () => ({} as MergedTableFilters<TFilters>)
   );
@@ -370,9 +381,11 @@ export function DataTable<
   }, [searchValue, config.searchFields]);
 
   // ---- Data fetching -------------------------------------------------------
+  const effectiveSorting = sortingEnabled ? sorting : [];
+
   const serviceQuery: ServiceQuery<TFilters> = React.useMemo(
-    () => ({ page, perPage, sorting, filters }),
-    [page, perPage, sorting, filters]
+    () => ({ page, perPage, sorting: effectiveSorting, filters }),
+    [page, perPage, effectiveSorting, filters]
   );
 
   const queryKey = React.useMemo(() => {
@@ -404,13 +417,25 @@ export function DataTable<
   const onAfterMutationSuccessRef = React.useRef(config.onAfterMutationSuccess);
   onAfterMutationSuccessRef.current = config.onAfterMutationSuccess;
 
-  const refreshAfterMutation = React.useCallback(async () => {
-    await refetch();
+  const runOnAfterMutationSuccess = React.useCallback(async () => {
     const onExtra = onAfterMutationSuccessRef.current;
     if (typeof onExtra === "function") {
       await onExtra({ queryClient, refetch });
     }
-  }, [refetch, queryClient]);
+  }, [queryClient, refetch]);
+
+  const refetchWithFollowUp = React.useCallback(
+    async (options?: RefetchOptions) => {
+      const result = await refetch(options);
+      await runOnAfterMutationSuccess();
+      return result;
+    },
+    [refetch, runOnAfterMutationSuccess]
+  );
+
+  const refreshAfterMutation = React.useCallback(async () => {
+    await refetchWithFollowUp();
+  }, [refetchWithFollowUp]);
 
   const tableData = data?.data ?? [];
 
@@ -462,7 +487,7 @@ export function DataTable<
       page,
       perPage,
       viewMode: currentViewMode,
-      sorting,
+      sorting: effectiveSorting,
       filters,
       rows: tableData,
       meta: data?.meta,
@@ -481,16 +506,17 @@ export function DataTable<
         setSearchValue("");
         setPage(1);
       },
-      refresh: () => refetch(),
+      refresh: () => refetchWithFollowUp(),
     }),
     [
       refetch,
+      refetchWithFollowUp,
       refreshAfterMutation,
       isFetching,
       page,
       perPage,
       currentViewMode,
-      sorting,
+      effectiveSorting,
       filters,
       tableData,
       data?.meta,
@@ -534,9 +560,13 @@ export function DataTable<
     const normalizedColumns = (config.columns || []).map((col) => {
       const { sortable, ...rest } = col;
       const colCopy: ColumnDef<TRecord> = { ...rest };
-      if (sortable === false) colCopy.enableSorting = false;
-      if (sortable === true && colCopy.enableSorting === undefined) {
-        colCopy.enableSorting = true;
+      if (!sortingEnabled) {
+        colCopy.enableSorting = false;
+      } else {
+        if (sortable === false) colCopy.enableSorting = false;
+        if (sortable === true && colCopy.enableSorting === undefined) {
+          colCopy.enableSorting = true;
+        }
       }
       return colCopy;
     });
@@ -574,12 +604,14 @@ export function DataTable<
     labels.actionsColumn,
     actionsContext,
     config.onOpenModal,
+    sortingEnabled,
   ]);
 
   const table = useReactTable({
     data: tableData,
     columns,
-    state: { sorting },
+    enableSorting: sortingEnabled,
+    state: { sorting: effectiveSorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: false,
@@ -592,7 +624,8 @@ export function DataTable<
 
   const skeletonRows = config.skeletonRows ?? 3;
   const colsCount = columns.length;
-  const busy = isLoading || isFetching;
+  /** Only the first load uses skeleton rows — not background refetch (`isFetching`), which avoids RTL table body swaps that look like extra/misaligned rows. */
+  const showLoadingSkeleton = isLoading;
 
   const c = React.useMemo(
     () => mergeDataTableClassNames(config.classNames),
@@ -756,7 +789,9 @@ export function DataTable<
       viewModes={availableViewModes}
       currentViewMode={currentViewMode}
       onViewMode={setViewMode}
-      onRefresh={() => { void refetch(); }}
+      onRefresh={() => {
+        void refetchWithFollowUp();
+      }}
       isRefreshing={isFetching}
     />
   ) : null;
@@ -820,7 +855,7 @@ export function DataTable<
           ))}
         </TableHeader>
         <TableBody className={joinClasses(c.tableBody)}>
-          {busy ? (
+          {showLoadingSkeleton ? (
             Array.from({ length: skeletonRows }).map((_, idx) => (
               <TableRow key={idx} className={joinClasses(c.tableRow, c.skeletonRow)}>
                 {Array.from({ length: colsCount }).map((__, colIdx) => (
@@ -928,7 +963,7 @@ export function DataTable<
           mapNoCoordinates: labels.mapNoCoordinates,
           errorLoading: labels.errorLoading,
         }}
-        isBusy={busy}
+        isBusy={showLoadingSkeleton}
         isError={isError}
         skeletonRows={skeletonRows}
         onOpenModal={config.onOpenModal}
@@ -940,7 +975,7 @@ export function DataTable<
           currentViewMode === "grid" ? c.gridView : c.listView
         )}
       >
-        {busy ? (
+        {showLoadingSkeleton ? (
           Array.from({ length: skeletonRows }).map((_, idx) => (
             <div
               key={idx}

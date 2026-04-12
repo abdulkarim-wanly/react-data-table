@@ -95,10 +95,10 @@ export interface OnAfterMutationSuccessArgs<TRecord> {
  * Generic over the row type and your filter record so callbacks stay typed.
  */
 export interface DataTableActionsContext<TRecord, TFilters extends FilterValues = FilterValues> {
+  /** TanStack Query refetch only; does not run `onAfterMutationSuccess`. */
   refetch: DataTableRefetch<TRecord>;
   /**
-   * Refetches this table’s query, then runs `onAfterMutationSuccess` from config when set.
-   * Prefer this over {@link refetch} after mutations (e.g. modal save) when you need related invalidations.
+   * Refetches this table’s query, then runs `onAfterMutationSuccess` when set (same as {@link refresh}).
    */
   refreshAfterMutation: () => Promise<void>;
   isFetching: boolean;
@@ -120,6 +120,10 @@ export interface DataTableActionsContext<TRecord, TFilters extends FilterValues 
   /** Replaces filter state (include search keys if you use `searchFields`). */
   applyFilters: (nextFilters: MergedTableFilters<TFilters>) => void;
   resetFilters: () => void;
+  /**
+   * Refetches this table’s query, then runs `onAfterMutationSuccess` when set.
+   * Prefer this (or {@link refreshAfterMutation}) after mutations instead of {@link refetch}.
+   */
   refresh: () => ReturnType<DataTableRefetch<TRecord>>;
 }
 

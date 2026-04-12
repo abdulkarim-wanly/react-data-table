@@ -2,12 +2,12 @@
 
 A configurable React data table built on TanStack Table and TanStack Query.
 
-It is designed for server-side data fetching with a typed `service.getAll` API, built-in search, pagination, sorting, toolbar actions, row actions, and optional `table`, `grid`, `list`, and `map` view modes.
+It is designed for server-side data fetching with a typed `service.getAll` API, built-in search, pagination, optional column sorting (`enableSorting: true`), toolbar actions, row actions, and optional `table`, `grid`, `list`, and `map` view modes.
 
 ## What It Includes
 
 - Typed `DataTable<TRecord, TFilters>` API
-- Server-side pagination, sorting, and filter flow
+- Server-side pagination, optional sorting, and filter flow
 - Built-in search input
 - Toolbar actions and row actions
 - Optional grid, list, and map views
@@ -129,6 +129,7 @@ type User = {
 };
 
 const config: DataTableConfig<User> = {
+  enableSorting: true,
   service: {
     getAll: async (query: ServiceQuery): Promise<ServiceResult<User>> => {
       const response = await fetch("/api/users", {
@@ -192,7 +193,8 @@ type ServiceResult<TRecord> = {
 | Key | Purpose |
 | --- | --- |
 | `service.getAll` | Required data loader |
-| `columns` | TanStack column definitions (`sortable` shorthand supported) |
+| `enableSorting` | Set `true` to enable header sort UI and pass `query.sorting` to `getAll` (default off) |
+| `columns` | TanStack column definitions (`sortable` shorthand when sorting is enabled) |
 | `searchFields` | Enables built-in search keys in `filters` |
 | `actions` | Toolbar buttons |
 | `rowActions` | Per-row action buttons (rendered with `Button`, `variant="ghost"` default; override with `buttonVariant`) |

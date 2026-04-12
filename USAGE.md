@@ -172,23 +172,91 @@ exists. Disable it if you already have an actions column:
 autoRowActionsColumn: false;
 ```
 
-## 6. Sorting
+## 6. Refetching and mutation follow-up
 
-Column sorting is server-side. Mark columns sortable with the `sortable`
-shorthand (or TanStack's `enableSorting`). The current sort state is passed to
-`service.getAll` via `query.sorting`. Sortable headers render an inline SVG
-indicator — no emoji, no extra dependencies.
+Every action, filter slot, and `onOpenModal` receives **`DataTableActionsContext`**. Use it to reload data after user actions.
+
+### `refetch` vs `refresh` / `refreshAfterMutation`
+
+- **`context.refetch()`** — TanStack Query refetch **only**. It does **not** run `onAfterMutationSuccess`.
+- **`context.refresh()`** — Refetches this table, then runs **`onAfterMutationSuccess`** when you configured it (same pipeline as the toolbar refresh button).
+- **`context.refreshAfterMutation()`** — Same behavior as **`refresh()`**; use whichever name reads clearer after a modal save.
+
+Example after a row `onClick` (invalidations from config run automatically when you use `refresh`):
 
 ```tsx
-columns: [
-  { accessorKey: "name",      header: "Name",    sortable: true },
-  { accessorKey: "email",     header: "Email",   sortable: true },
-  { accessorKey: "createdAt", header: "Created", sortable: true },
-  { accessorKey: "role",      header: "Role",    sortable: false },
+rowActions: [
+  {
+    id: "archive",
+    label: "Archive",
+    onClick: async ({ record, context }) => {
+      await api.archiveUser(record.id);
+      await context.refresh();
+    },
+  },
 ],
 ```
 
-## 7. Custom Filters UI
+### `onAfterMutationSuccess`
+
+Register **once** on the table config. It runs **after** the table’s own refetch finishes when the refresh came from **`context.refresh()`**, **`context.refreshAfterMutation()`**, or the **chrome toolbar refresh** — not from raw **`context.refetch()`**.
+
+```tsx
+import type { DataTableConfig, DataTableActionsContext } from "genesis-react-data-table";
+
+const config: DataTableConfig<User> = {
+  service: { getAll: fetchUsers },
+  columns: [...],
+  onAfterMutationSuccess: async ({ queryClient }) => {
+    await queryClient.invalidateQueries({ queryKey: ["analytics"] });
+  },
+  rowActions: [
+    {
+      id: "edit",
+      label: "Edit",
+      openModal: ({ record }) => ({
+        type: "edit-user",
+        props: { userId: record.id },
+      }),
+    },
+  ],
+  onOpenModal: (type, props) => {
+    if (type !== "edit-user") return;
+    const ctx = props.context as DataTableActionsContext<User>;
+    openEditUserModal({
+      userId: props.userId as string,
+      onSaved: () => void ctx.refresh(),
+    });
+  },
+};
+```
+
+The library keeps the latest `onAfterMutationSuccess` on an internal ref, so you can replace the function without stale closures. Only raw **`context.refetch()`** skips the hook; **`context.refresh()`** and **`context.refreshAfterMutation()`** both run it after the table refetch.
+
+Toolbar **`openModal`** merges **`context`** into `onOpenModal` props the same way (no `record` unless you add it to `props` yourself).
+
+## 7. Sorting
+
+Column sorting is **off by default**. Set **`enableSorting: true`** on the config to allow header clicks and to pass `query.sorting` to `service.getAll`.
+
+Mark individual columns with the `sortable` shorthand (or TanStack's `enableSorting`). Sortable headers render an inline SVG indicator — no emoji, no extra dependencies.
+
+```tsx
+const config: DataTableConfig<User> = {
+  enableSorting: true,
+  service: { getAll: fetchUsers },
+  columns: [
+    { accessorKey: "name", header: "Name", sortable: true },
+    { accessorKey: "email", header: "Email", sortable: true },
+    { accessorKey: "createdAt", header: "Created", sortable: true },
+    { accessorKey: "role", header: "Role", sortable: false },
+  ],
+};
+```
+
+**Refresh / refetch:** the table only swaps in skeleton rows on the **first** load (`isLoading`). Background refetch keeps showing the current rows so RTL layouts and wide tables do not flicker or look like extra rows were appended.
+
+## 8. Custom Filters UI
 
 ### Function form
 
@@ -243,7 +311,7 @@ filtersUI: {
 };
 ```
 
-## 8. Full Filters Override
+## 9. Full Filters Override
 
 For complete control of the filters area, use `renderFilters`. When set, the
 table ignores `filtersUI` for that slot.
@@ -259,7 +327,7 @@ renderFilters: (context) => (
 );
 ```
 
-## 9. Grid and List Views
+## 10. Grid and List Views
 
 Enable alternate renderers with `views`. The user's chosen mode is persisted in
 `localStorage` by default. Grid/list items are keyed by `id`, `_id`, `uuid`, or
@@ -298,7 +366,7 @@ views: {
 },
 ```
 
-## 10. Map View
+## 11. Map View
 
 Map view requires Leaflet CSS and coordinate mapping.
 
@@ -334,7 +402,7 @@ Layout options:
 - `layout: "full"` (default) — map fills the container; tap a marker to open a React popup
 - `layout: "split"` — sidebar list on the left, interactive map on the right
 
-## 11. Styling
+## 12. Styling
 
 Override layout class names through `classNames`.
 
@@ -351,6 +419,26 @@ const config: DataTableConfig<User> = {
 };
 ```
 
+### Table column min-widths (horizontal scroll)
+
+By default, table headers and cells use a **minimum column width** so narrow content does not collapse columns. The `<table>` uses **`min-w-full w-max`** so when many columns exceed the viewport, **`tableOuter`** (scroll container) shows a **horizontal scrollbar**.
+
+- **Global tweak:** override `classNames.tableHeadCell` and `classNames.tableCell` (merge with defaults via `mergeDataTableClassNames` if you only want to change min width).
+- **Per column:** set **`meta.minWidth`** on a column definition — a `number` is treated as **pixels**, or pass a CSS length string (e.g. `'12rem'`). This is applied as inline `minWidth` on the matching `<th>` / `<td>`.
+
+```tsx
+import type { DataTableColumnDef } from "genesis-react-data-table";
+
+const columns: DataTableColumnDef<Property>[] = [
+  { accessorKey: "name", header: "Name" },
+  {
+    accessorKey: "area",
+    header: "Building area",
+    meta: { minWidth: "11rem" },
+  },
+];
+```
+
 ### Chrome toolbar controls
 
 | `classNames` key | Element |
@@ -365,7 +453,7 @@ const config: DataTableConfig<User> = {
 Set **`toolbarIconButton`** once to apply a shared base class to all icon
 controls above (see `mergeDataTableClassNames`).
 
-## 12. Labels
+## 13. Labels
 
 Replace default English labels through `labels`.
 
@@ -383,7 +471,7 @@ const config: DataTableConfig<User> = {
 };
 ```
 
-## 13. Custom Layout Wrappers
+## 14. Custom Layout Wrappers
 
 Use `layoutComponents` to replace the header, toolbar, or table shell while
 keeping all table logic.
@@ -417,7 +505,7 @@ const config: DataTableConfig<User> = {
 };
 ```
 
-## 14. Modal Registry
+## 15. Modal Registry
 
 `onRegisterModal` gives you a map of all action handlers keyed by
 `"<tableId>:action:<id>"` or `"<tableId>:rowAction:<id>"`. Use it to
@@ -446,7 +534,7 @@ const config: DataTableConfig<User> = {
 };
 ```
 
-## 15. URL Actions
+## 16. URL Actions
 
 Use `onUrlAction` to sync URL query parameters on mount. The callback fires
 **once** when the table mounts — it does not re-run if the callback reference
@@ -464,7 +552,7 @@ const config: DataTableConfig<User, UserFilters> = {
 };
 ```
 
-## 16. Useful Exports
+## 17. Useful Exports
 
 Stand-alone components you can import independently:
 
@@ -482,15 +570,19 @@ Helpers:
 - `mergeDataTableLabels`
 - `setDefaultDataTableFiltersHost` (from `genesis-react-data-table/setup`)
 - `isModalPayload`
+- `OnAfterMutationSuccessArgs` — typing for `onAfterMutationSuccess`
+- `DataTableColumnMeta` — e.g. `meta.minWidth` on columns
 
-## 17. Common Notes
+## 18. Common Notes
 
 - `service.getAll` is the only required integration point.
 - Pagination behaves best when you return `meta.total`.
 - `hasNext` / `hasPrevious` are useful for cursor-style APIs.
 - The selected view mode is persisted to `localStorage` by default; disable with `views.persistMode: false`.
 - `chromeToolbar` is enabled by default; set `chromeToolbar: false` to use the legacy light toolbar.
-- `onOpenModal` is only needed if your actions use `openModal`.
+- `onOpenModal` is only needed if your actions use `openModal`; modal props include `context` (and `record` for row actions) so you can call `context.refetch()` or `context.refreshAfterMutation()`.
+- `onAfterMutationSuccess` runs after **`context.refresh()`** / **`context.refreshAfterMutation()`** and toolbar refresh — not after raw **`context.refetch()`**.
+- Column sorting is off unless **`enableSorting: true`**; `query.sorting` is always `[]` when sorting is disabled.
 - Row action buttons default to `variant="ghost"`; override per-action with `buttonVariant`.
 - Grid/list items are keyed by `id`, `_id`, `uuid`, or `key` — falling back to index only when none exist.
 - The package has `sideEffects: false`, enabling full tree-shaking for consumers using Webpack or Rollup.
