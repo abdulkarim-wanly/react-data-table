@@ -111,9 +111,22 @@ export interface DataTableActionsContext<TRecord, TFilters extends FilterValues 
 /** Optional icon component (e.g. from lucide-react). */
 export type TableIconComponent = ComponentType<{ className?: string }>;
 
+/**
+ * Optional `meta` fields read by the built-in table view (`<th>` / `<td>`).
+ * Other keys are allowed for your own use.
+ */
+export interface DataTableColumnMeta {
+  /**
+   * Minimum width for this column. Numbers are treated as pixels; strings are passed to CSS
+   * (e.g. `'12rem'`, `'200px'`). Overrides the default {@link DEFAULT_DATA_TABLE_CLASSNAMES} cell min-width.
+   */
+  minWidth?: number | string;
+}
+
 /** Column definition with optional `sortable` alias mapped to TanStack `enableSorting`. */
 export type DataTableColumnDef<TRecord> = ColumnDef<TRecord> & {
   sortable?: boolean;
+  meta?: DataTableColumnMeta & Record<string, unknown>;
 };
 
 export interface DataTableViewRendererArgs<TRecord, TFilters extends FilterValues = FilterValues> {

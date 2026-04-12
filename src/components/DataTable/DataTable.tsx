@@ -60,6 +60,17 @@ function joinClasses(...parts: (string | undefined | false)[]): string {
   return parts.filter(Boolean).join(" ").trim();
 }
 
+function getColumnMinWidthStyle(
+  meta: unknown
+): React.CSSProperties | undefined {
+  if (!meta || typeof meta !== "object") return undefined;
+  const mw = (meta as { minWidth?: number | string }).minWidth;
+  if (mw == null || mw === "") return undefined;
+  return {
+    minWidth: typeof mw === "number" ? `${mw}px` : String(mw),
+  };
+}
+
 function formatLabel(
   template: string,
   vars: Record<string, string | number>
@@ -762,6 +773,9 @@ export function DataTable<
                       c.tableHeadCell,
                       canSort ? c.tableHeadCellSortable : ""
                     )}
+                    style={getColumnMinWidthStyle(
+                      header.column.columnDef.meta
+                    )}
                     onClick={
                       canSort
                         ? header.column.getToggleSortingHandler()
@@ -814,7 +828,11 @@ export function DataTable<
             rows.map((row) => (
               <TableRow key={row.id} className={joinClasses(c.tableRow)}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className={joinClasses(c.tableCell)}>
+                  <TableCell
+                    key={cell.id}
+                    className={joinClasses(c.tableCell)}
+                    style={getColumnMinWidthStyle(cell.column.columnDef.meta)}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}

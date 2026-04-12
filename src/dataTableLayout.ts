@@ -152,13 +152,15 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   searchInput: 'max-w-md',
   tableOuter: 'relative z-0 isolate overflow-auto',
   tableScroll: '',
-  table: 'min-w-full border-collapse',
+  /** `w-max` lets the table grow past the viewport when columns have min-widths, so `tableOuter` scrolls horizontally. */
+  table: 'min-w-full w-max border-collapse',
   tableHeader: '',
-  tableHeadCell: '',
+  /** Default minimum column width for readable headers (override per column via `meta.minWidth`). */
+  tableHeadCell: 'min-w-[8rem] align-top',
   tableHeadCellSortable: 'cursor-pointer select-none',
   tableBody: '',
   tableRow: '',
-  tableCell: '',
+  tableCell: 'min-w-[8rem] align-top',
   skeletonRow: '',
   skeletonBar: 'h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700 animate-pulse',
   messageCell: '',

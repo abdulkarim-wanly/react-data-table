@@ -16,6 +16,7 @@ export { DataTableToolbar } from './components/DataTableToolbar/DataTableToolbar
 
 export type {
   DataTableActionsContext,
+  DataTableColumnMeta,
   DataTableColumnDef,
   DataTableMapCoordinates,
   DataTableMapItemRenderArgs,
