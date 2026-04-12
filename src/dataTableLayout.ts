@@ -155,8 +155,8 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   /** `w-max` lets the table grow past the viewport when columns have min-widths, so `tableOuter` scrolls horizontally. */
   table: 'min-w-full w-max border-collapse',
   tableHeader: '',
-  /** Default minimum column width for readable headers (override per column via `meta.minWidth`). */
-  tableHeadCell: 'min-w-[8rem] align-top',
+  /** Default minimum column width for readable, left-aligned headers (override per column via `meta.minWidth`). */
+  tableHeadCell: 'min-w-[8rem] align-top text-left',
   tableHeadCellSortable: 'cursor-pointer select-none',
   tableBody: '',
   tableRow: '',

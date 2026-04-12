@@ -18,7 +18,7 @@ It is designed for server-side data fetching with a typed `service.getAll` API, 
 ## Documentation
 
 - Discovery and setup: `README.md`
-- Practical examples: [USAGE.md](/c:/Users/Administrator/Downloads/my-react-data-table-lib/USAGE.md)
+- Practical examples: [USAGE.md](./USAGE.md)
 
 ## Installation
 
@@ -207,9 +207,67 @@ type ServiceResult<TRecord> = {
 | `labels` | Partial `DataTableLabels` override |
 | `layoutComponents` | Replace header, toolbar, or shell wrappers |
 | `chromeToolbar` | Dark chrome toolbar when `true` (default); `false` for legacy light toolbar |
-| `onOpenModal` | Modal integration for actions |
+| `onOpenModal` | Modal integration for actions (see [Modals](#modals-and-datatableactionscontext)) |
 | `onRegisterModal` | Receives a map of all modal handlers keyed by action id |
 | `onUrlAction` | Fires once on mount; use to sync URL params into table state |
+| `onAfterMutationSuccess` | Runs after `context.refresh()` / toolbar refresh refetch (not after raw `refetch`) |
+
+## Modals and `DataTableActionsContext`
+
+The table **does not render dialogs**. It tells your app to open them by calling **`config.onOpenModal(type, props)`** whenever an action uses **`openModal`**.
+
+### Flow
+
+1. **Toolbar action** (`config.actions`): `openModal({ context })` may return `{ type, props }`.
+2. **Row action** (`config.rowActions`): `openModal({ record, context })` may return `{ type, props }`.
+3. The library merges **`props`** from that return value with the live table **`context`** (and **`record`** for row actions). Your modal component receives a single `props` object.
+
+Merged props always include:
+
+- **`context`** — full **`DataTableActionsContext`** (pagination, filters, **`refetch`**, **`refresh`**, `rows`, etc.).
+- **`record`** — row data (row actions only).
+- **`dataTableContext`** — same object as **`context`**; use if your app accidentally overwrites or strips **`context`** when forwarding to a store.
+
+Any `context` / `record` keys inside the action’s returned `props` are **dropped** before merge so placeholders cannot replace the real table context.
+
+### Your responsibilities
+
+1. Implement **`onOpenModal`** — typically forward into your modal layer **without** rebuilding or serializing props:
+
+   ```tsx
+   onOpenModal: (type, props) => {
+     useModalStore.getState().openModal(type, props);
+   };
+   ```
+
+   Avoid `JSON.parse(JSON.stringify(props))`, whitelists that omit **`context`**, or patterns like `context: ref.current ?? {}` unless `ref` truly holds **`DataTableActionsContext`**.
+
+2. Render the modal (e.g. a host that does `<Component {...modal.props} open={...} />`) so **`context`** / **`dataTableContext`** reach the component.
+
+3. After a successful mutation, reload the table in a way that can run follow-up hooks:
+
+   - **`await context.refresh()`** (or **`refreshAfterMutation()`**) — refetches this table’s query, then runs **`onAfterMutationSuccess`** if configured.
+   - **`await context.refetch()`** — TanStack Query refetch **only**; does **not** run **`onAfterMutationSuccess`**.
+
+### `DataTableActionsContext` (modal-relevant fields)
+
+| Field | Role |
+| --- | --- |
+| `context.refresh()` | Refetch table + optional **`onAfterMutationSuccess`** |
+| `context.refreshAfterMutation()` | Same pipeline as **`refresh()`** |
+| `context.refetch()` | Raw query refetch; no **`onAfterMutationSuccess`** |
+| `context.rows`, `filters`, `setPage`, … | Same object passed to filters and actions |
+
+### Optional: `onRegisterModal`
+
+The library can expose a registry of async handlers keyed by `"<tableId>:action:<id>"` and `"<tableId>:rowAction:<id>"` so other code (menus, shortcuts) can trigger the same `openModal` logic. You still need **`onOpenModal`** to actually show the UI.
+
+### Types
+
+- **`OpenModalCallback`** — `(type, props) => void` where `props` includes **`context`** (and **`record`** for row-driven modals).
+- **`OnAfterMutationSuccessArgs`** — `{ queryClient, refetch }` passed to **`onAfterMutationSuccess`**.
+
+More examples (filters, row actions, Zustand): see **§6 Refetching and mutation follow-up** in [USAGE.md](./USAGE.md).
 
 ## View Modes
 
@@ -270,6 +328,7 @@ Main exports:
 - `componentCell`
 - `setDefaultDataTableFiltersHost` (also at `genesis-react-data-table/setup`)
 - `isModalPayload`
+- `OnAfterMutationSuccessArgs`
 - `mergeDataTableClassNames`
 - `mergeDataTableLabels`
 - `DEFAULT_DATA_TABLE_CLASSNAMES`
@@ -294,7 +353,7 @@ Key types:
 
 ## Usage Guide
 
-For real examples covering typed filters, actions, row modals, view modes, and styling, see [USAGE.md](/c:/Users/Administrator/Downloads/my-react-data-table-lib/USAGE.md).
+For real examples covering typed filters, actions, row modals, view modes, and styling, see [USAGE.md](./USAGE.md).
 
 ## Development
 

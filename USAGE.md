@@ -425,7 +425,7 @@ const config: DataTableConfig<User> = {
 
 ### Table column min-widths (horizontal scroll)
 
-By default, table headers and cells use a **minimum column width** so narrow content does not collapse columns. The `<table>` uses **`min-w-full w-max`** so when many columns exceed the viewport, **`tableOuter`** (scroll container) shows a **horizontal scrollbar**.
+By default, table headers are **left-aligned** and both headers and cells use a **minimum column width** so narrow content does not collapse columns. The `<table>` uses **`min-w-full w-max`** so when many columns exceed the viewport, **`tableOuter`** (scroll container) shows a **horizontal scrollbar**.
 
 - **Global tweak:** override `classNames.tableHeadCell` and `classNames.tableCell` (merge with defaults via `mergeDataTableClassNames` if you only want to change min width).
 - **Per column:** set **`meta.minWidth`** on a column definition — a `number` is treated as **pixels**, or pass a CSS length string (e.g. `'12rem'`). This is applied as inline `minWidth` on the matching `<th>` / `<td>`.
