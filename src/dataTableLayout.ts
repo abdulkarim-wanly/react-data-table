@@ -156,11 +156,11 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   table: 'min-w-full w-max border-collapse',
   tableHeader: '',
   /** Default minimum column width for readable headers (override per column via `meta.minWidth`). */
-  tableHeadCell: 'min-w-[8rem] align-top text-start',
+  tableHeadCell: 'min-w-[8rem] align-top ltr:text-left rtl:text-right',
   tableHeadCellSortable: 'cursor-pointer select-none',
   tableBody: '',
   tableRow: '',
-  tableCell: 'min-w-[8rem] align-top text-start',
+  tableCell: 'min-w-[8rem] align-top ltr:text-left rtl:text-right',
   skeletonRow: '',
   skeletonBar: 'h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700 animate-pulse',
   messageCell: '',
