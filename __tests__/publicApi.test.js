@@ -29,8 +29,8 @@ describe('public helpers', () => {
     expect(mergeDataTableLabels({ viewAsList: 'Rows' }).viewAsList).toBe('Rows');
   });
 
-  test('default table header cells are left-aligned', () => {
-    expect(DEFAULT_DATA_TABLE_CLASSNAMES.tableHeadCell).toContain('text-left');
+  test('default table header cells are start-aligned', () => {
+    expect(DEFAULT_DATA_TABLE_CLASSNAMES.tableHeadCell).toContain('text-start');
   });
 
   test('isModalPayload accepts only the expected modal payload shape', () => {

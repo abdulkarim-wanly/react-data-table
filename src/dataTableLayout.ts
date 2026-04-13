@@ -155,12 +155,12 @@ export const DEFAULT_DATA_TABLE_CLASSNAMES: DataTableClassNames = {
   /** `w-max` lets the table grow past the viewport when columns have min-widths, so `tableOuter` scrolls horizontally. */
   table: 'min-w-full w-max border-collapse',
   tableHeader: '',
-  /** Default minimum column width for readable, left-aligned headers (override per column via `meta.minWidth`). */
-  tableHeadCell: 'min-w-[8rem] align-top text-left',
+  /** Default minimum column width for readable headers (override per column via `meta.minWidth`). */
+  tableHeadCell: 'min-w-[8rem] align-top text-start',
   tableHeadCellSortable: 'cursor-pointer select-none',
   tableBody: '',
   tableRow: '',
-  tableCell: 'min-w-[8rem] align-top',
+  tableCell: 'min-w-[8rem] align-top text-start',
   skeletonRow: '',
   skeletonBar: 'h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700 animate-pulse',
   messageCell: '',
