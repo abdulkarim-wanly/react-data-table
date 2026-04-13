@@ -28,5 +28,5 @@ export const TableCell: React.FC<React.TdHTMLAttributes<HTMLTableCellElement>> =
 );
 
 export const TableHead: React.FC<React.ThHTMLAttributes<HTMLTableCellElement>> = ({ children, className, ...props }) => (
-  <th className={cn(className, 'text-start align-top')} {...props}>{children}</th>
+  <th className={cn(className, 'ltr:text-left rtl:text-right align-top')} {...props}>{children}</th>
 );
