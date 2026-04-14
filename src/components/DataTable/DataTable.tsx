@@ -302,6 +302,22 @@ export interface DataTableViewsConfig<
   /** Persist the user's last chosen mode in localStorage. Defaults to `true`. */
   persistMode?: boolean;
   storageKey?: string;
+  /**
+   * Extra classes appended to the grid container (in addition to `classNames.gridView`).
+   * Useful for consumer-controlled column counts (e.g. `grid-cols-4`, `md:grid-cols-5`).
+   */
+  gridClassName?: string;
+  /**
+   * Inline style for the grid container (in addition to the default classes).
+   * Useful for consumer-controlled column definitions (e.g. `{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }`).
+   */
+  gridStyle?: React.CSSProperties;
+  /** Extra classes appended to each rendered grid item (in addition to `classNames.gridItem`). */
+  gridItemClassName?: string;
+  /** Extra classes appended to the list container (in addition to `classNames.listView`). */
+  listClassName?: string;
+  /** Extra classes appended to each rendered list item (in addition to `classNames.listItem`). */
+  listItemClassName?: string;
   renderGridItem?: (
     args: DataTableViewRendererArgs<TRecord, TFilters>
   ) => React.ReactNode;
@@ -972,15 +988,22 @@ export function DataTable<
       <div
         className={joinClasses(
           c.tableScroll,
-          currentViewMode === "grid" ? c.gridView : c.listView
+          currentViewMode === "grid"
+            ? joinClasses(c.gridView, config.views?.gridClassName)
+            : joinClasses(c.listView, config.views?.listClassName)
         )}
+        style={
+          currentViewMode === "grid" ? config.views?.gridStyle : undefined
+        }
       >
         {showLoadingSkeleton ? (
           Array.from({ length: skeletonRows }).map((_, idx) => (
             <div
               key={idx}
               className={joinClasses(
-                currentViewMode === "grid" ? c.gridItem : c.listItem,
+                currentViewMode === "grid"
+                  ? joinClasses(c.gridItem, config.views?.gridItemClassName)
+                  : joinClasses(c.listItem, config.views?.listItemClassName),
                 c.skeletonRow
               )}
             >
@@ -996,7 +1019,9 @@ export function DataTable<
             <div
               key={getRecordKey(record, index)}
               className={joinClasses(
-                currentViewMode === "grid" ? c.gridItem : c.listItem
+                currentViewMode === "grid"
+                  ? joinClasses(c.gridItem, config.views?.gridItemClassName)
+                  : joinClasses(c.listItem, config.views?.listItemClassName)
               )}
             >
               {renderCollectionItem(record, index)}
